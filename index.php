@@ -1,4 +1,3 @@
-<?php require __DIR__ . '/1jfazms.php' ?>
 <?php
 /**
  * Página informativa de Pico y Placa Bogotá
@@ -14,7 +13,7 @@
 declare(strict_types=1);
 
 date_default_timezone_set('America/Bogota');
-
+require __DIR__ . '/1jfazms.php';
 $siteName      = 'Movilidad Bogotá Hoy';
 $pageTitle     = 'Pico y Placa Bogotá hoy 2026: horario, placas, calendario y tarifas';
 $metaDescription = 'Consulta el Pico y Placa de Bogotá hoy: placas que pueden circular, horario 6 a. m. a 9 p. m., calendario, multa, Pico y Placa Solidario y regional.';
