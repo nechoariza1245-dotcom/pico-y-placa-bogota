@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Pico y Placa Bogotá 2026</title>
+  <desc id="desc">Horario, placas, calendario y tarifas del Pico y Placa de Bogotá.</desc>
+  <rect width="1200" height="630" fill="#071f49"/>
+  <circle cx="1040" cy="120" r="230" fill="#1260d6"/>
+  <circle cx="1110" cy="555" r="260" fill="#30cfd0" opacity=".9"/>
+  <rect y="500" width="1200" height="130" fill="#1260d6" opacity=".94"/>
+  <text x="80" y="150" fill="#30cfd0" font-family="Arial, sans-serif" font-size="52" font-weight="700">PICO Y PLACA</text>
+  <text x="80" y="225" fill="#ffffff" font-family="Arial, sans-serif" font-size="68" font-weight="800">BOGOTÁ 2026</text>
+  <text x="80" y="285" fill="#dcebff" font-family="Arial, sans-serif" font-size="30">Horario, placas, calendario y tarifas</text>
+  <rect x="80" y="340" rx="25" width="530" height="120" fill="#ffffff"/>
+  <text x="115" y="405" fill="#071f49" font-family="Arial, sans-serif" font-size="34" font-weight="700">6:00 A. M. – 9:00 P. M.</text>
+  <text x="115" y="442" fill="#1260d6" font-family="Arial, sans-serif" font-size="25">Lunes a viernes</text>
+  <circle cx="900" cy="300" r="122" fill="#ffd05a"/>
+  <circle cx="900" cy="300" r="91" fill="#ffffff"/>
+  <text x="900" y="290" text-anchor="middle" fill="#071f49" font-family="Arial, sans-serif" font-size="43" font-weight="800">1–5</text>
+  <text x="900" y="337" text-anchor="middle" fill="#1260d6" font-family="Arial, sans-serif" font-size="25" font-weight="700">IMPAR</text>
+</svg>
