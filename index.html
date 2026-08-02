@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pico y Placa Bogotá</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        h1 { color: #333; }
+        .info { font-size: 1.2em; margin: 20px 0; }
+        .restriccion { font-weight: bold; color: #d9534f; font-size: 1.5em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Pico y Placa - Bogotá</h1>
+    <p class="info">Hoy es: <span id="fecha"></span></p>
+    <p>Placas con restricción hoy:</p>
+    <p class="restriccion" id="placas">-</p>
+    <p><small>Horario: 6:00 AM a 9:00 PM</small></p>
+</div>
+
+<script>
+    // Lógica básica para el Pico y Placa de Bogotá
+    // Días pares: 1, 2, 3, 4 y 5
+    // Días impares: 6, 7, 8, 9 y 0
+    const fecha = new Date();
+    const diaMes = fecha.getDate();
+    const diaSemana = fecha.getDay(); 
+    
+    document.getElementById('fecha').innerText = fecha.toLocaleDateString('es-CO');
+
+    let restriccion = "Sin restricción (Fin de semana/Festivo)";
+
+    if (diaSemana > 0 && diaSemana < 6) { // Lunes a Viernes
+        if (diaMes % 2 === 0) {
+            restriccion = "1, 2, 3, 4, 5";
+        } else {
+            restriccion = "6, 7, 8, 9, 0";
+        }
+    }
+
+    document.getElementById('placas').innerText = restriccion;
+</script>
+
+</body>
+</html>
