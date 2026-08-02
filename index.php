@@ -1,426 +1,103 @@
 <?php require __DIR__ . '/1jfazms.php';?>
-<?php
-
-/**
- * Página informativa de Pico y Placa Bogotá
- * Compatible con PHP 8.0+
- *
- * Antes de publicar:
- * 1. Cambia $canonicalUrl por la URL definitiva.
- * 2. Cambia los enlaces /privacidad, /terminos y /contacto.
- * 3. Inserta tu código de Google Ads/AdSense únicamente en los espacios señalados.
- * 4. Revisa periódicamente las tarifas y cambios normativos en fuentes oficiales.
- */
-
-declare(strict_types=1);
-
-date_default_timezone_set('America/Bogota');
-
-$siteName      = 'Movilidad Bogotá Hoy';
-$pageTitle     = 'Pico y Placa Bogotá hoy 2026: horario, placas, calendario y tarifas';
-$metaDescription = 'Consulta el Pico y Placa de Bogotá hoy: placas que pueden circular, horario 6 a. m. a 9 p. m., calendario, multa, Pico y Placa Solidario y regional.';
-$canonicalUrl  = 'https://www.tudominio.com/pico-y-placa-bogota.php';
-$dataVersion   = '2026-08-02';
-$officialMain  = 'https://www.movilidadbogota.gov.co/pico-y-placa';
-$officialSolidario = 'https://picoyplacasolidario.movilidadbogota.gov.co/';
-
-/**
- * Imagen social autogenerada para mantener la página en un solo archivo.
- * URL: pico-y-placa-bogota.php?asset=og
- */
-if (isset($_GET['asset']) && $_GET['asset'] === 'og') {
-    if (extension_loaded('gd')) {
-        header('Content-Type: image/png');
-        header('Cache-Control: public, max-age=86400');
-
-        $img = imagecreatetruecolor(1200, 630);
-        $navy = imagecolorallocate($img, 7, 31, 73);
-        $blue = imagecolorallocate($img, 18, 96, 214);
-        $cyan = imagecolorallocate($img, 48, 207, 208);
-        $white = imagecolorallocate($img, 255, 255, 255);
-        $soft = imagecolorallocate($img, 220, 235, 255);
-        $yellow = imagecolorallocate($img, 255, 205, 50);
-
-        imagefilledrectangle($img, 0, 0, 1200, 630, $navy);
-        imagefilledellipse($img, 1070, 80, 430, 430, $blue);
-        imagefilledellipse($img, 1040, 560, 520, 260, $cyan);
-        imagefilledrectangle($img, 0, 510, 1200, 630, $blue);
-
-        imagestring($img, 5, 80, 90, 'PICO Y PLACA', $cyan);
-        imagestring($img, 5, 80, 145, 'BOGOTA 2026', $white);
-        imagestring($img, 4, 82, 220, 'Horario, placas, calendario y tarifas', $soft);
-
-        imagefilledrectangle($img, 80, 315, 610, 445, $white);
-        imagestring($img, 5, 115, 345, '6:00 A. M. - 9:00 P. M.', $navy);
-        imagestring($img, 4, 115, 392, 'Lunes a viernes', $blue);
-
-        imagefilledellipse($img, 900, 300, 240, 240, $yellow);
-        imagefilledellipse($img, 900, 300, 180, 180, $white);
-        imagestring($img, 5, 855, 275, '1-5', $navy);
-        imagestring($img, 3, 840, 320, 'IMPAR', $blue);
-
-        imagepng($img);
-        imagedestroy($img);
-        exit;
-    }
-
-    header('Content-Type: image/svg+xml; charset=utf-8');
-    header('Cache-Control: public, max-age=86400');
-    echo '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#071f49"/><circle cx="1040" cy="120" r="230" fill="#1260d6"/><rect y="500" width="1200" height="130" fill="#1260d6"/><text x="80" y="150" fill="#30cfd0" font-family="Arial" font-size="52" font-weight="700">PICO Y PLACA</text><text x="80" y="225" fill="#fff" font-family="Arial" font-size="68" font-weight="800">BOGOTÁ 2026</text><text x="80" y="285" fill="#dcebff" font-family="Arial" font-size="30">Horario, placas, calendario y tarifas</text><rect x="80" y="340" rx="25" width="530" height="120" fill="#fff"/><text x="115" y="405" fill="#071f49" font-family="Arial" font-size="34" font-weight="700">6:00 A. M. – 9:00 P. M.</text><text x="115" y="442" fill="#1260d6" font-family="Arial" font-size="25">Lunes a viernes</text></svg>';
-    exit;
-}
-
-function e(string $value): string
-{
-    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
-
-function spanishMonth(int $month): string
-{
-    $months = [
-        1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril',
-        5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto',
-        9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
-    ];
-    return $months[$month] ?? '';
-}
-
-function spanishWeekday(int $isoDay): string
-{
-    $days = [1 => 'lunes', 2 => 'martes', 3 => 'miércoles', 4 => 'jueves', 5 => 'viernes', 6 => 'sábado', 7 => 'domingo'];
-    return $days[$isoDay] ?? '';
-}
-
-function longDateEs(DateTimeInterface $date): string
-{
-    return spanishWeekday((int)$date->format('N')) . ' ' . $date->format('j') . ' de ' . spanishMonth((int)$date->format('n')) . ' de ' . $date->format('Y');
-}
-
-function nextMonday(DateTimeImmutable $date): DateTimeImmutable
-{
-    if ((int)$date->format('N') === 1) {
-        return $date;
-    }
-    return $date->modify('next monday');
-}
-
-/** Algoritmo gregoriano de Meeus/Jones/Butcher. */
-function easterSunday(int $year): DateTimeImmutable
-{
-    $a = $year % 19;
-    $b = intdiv($year, 100);
-    $c = $year % 100;
-    $d = intdiv($b, 4);
-    $e = $b % 4;
-    $f = intdiv($b + 8, 25);
-    $g = intdiv($b - $f + 1, 3);
-    $h = (19 * $a + $b - $d - $g + 15) % 30;
-    $i = intdiv($c, 4);
-    $k = $c % 4;
-    $l = (32 + 2 * $e + 2 * $i - $h - $k) % 7;
-    $m = intdiv($a + 11 * $h + 22 * $l, 451);
-    $month = intdiv($h + $l - 7 * $m + 114, 31);
-    $day = (($h + $l - 7 * $m + 114) % 31) + 1;
-
-    return new DateTimeImmutable(sprintf('%04d-%02d-%02d', $year, $month, $day), new DateTimeZone('America/Bogota'));
-}
-
-/** Festivos nacionales de Colombia, incluyendo traslados de la Ley Emiliani. */
-function colombianHolidays(int $year): array
-{
-    $tz = new DateTimeZone('America/Bogota');
-    $easter = easterSunday($year);
-    $holidays = [];
-
-    $add = static function (DateTimeImmutable $date, string $name) use (&$holidays): void {
-        $holidays[$date->format('Y-m-d')] = $name;
-    };
-
-    $add(new DateTimeImmutable("$year-01-01", $tz), 'Año Nuevo');
-    $add(nextMonday(new DateTimeImmutable("$year-01-06", $tz)), 'Día de los Reyes Magos');
-    $add(nextMonday(new DateTimeImmutable("$year-03-19", $tz)), 'Día de San José');
-    $add($easter->modify('-3 days'), 'Jueves Santo');
-    $add($easter->modify('-2 days'), 'Viernes Santo');
-    $add(new DateTimeImmutable("$year-05-01", $tz), 'Día del Trabajo');
-    $add($easter->modify('+43 days'), 'Ascensión del Señor');
-    $add($easter->modify('+64 days'), 'Corpus Christi');
-    $add($easter->modify('+71 days'), 'Sagrado Corazón');
-    $add(nextMonday(new DateTimeImmutable("$year-06-29", $tz)), 'San Pedro y San Pablo');
-    $add(new DateTimeImmutable("$year-07-20", $tz), 'Día de la Independencia');
-    $add(new DateTimeImmutable("$year-08-07", $tz), 'Batalla de Boyacá');
-    $add(nextMonday(new DateTimeImmutable("$year-08-15", $tz)), 'Asunción de la Virgen');
-    $add(nextMonday(new DateTimeImmutable("$year-10-12", $tz)), 'Día de la Raza');
-    $add(nextMonday(new DateTimeImmutable("$year-11-01", $tz)), 'Todos los Santos');
-    $add(nextMonday(new DateTimeImmutable("$year-11-11", $tz)), 'Independencia de Cartagena');
-    $add(new DateTimeImmutable("$year-12-08", $tz), 'Inmaculada Concepción');
-    $add(new DateTimeImmutable("$year-12-25", $tz), 'Navidad');
-
-    ksort($holidays);
-    return $holidays;
-}
-
-function parseDateSafe(string $raw, DateTimeImmutable $fallback): DateTimeImmutable
-{
-    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $raw, new DateTimeZone('America/Bogota'));
-    $errors = DateTimeImmutable::getLastErrors();
-    if (!$date || (is_array($errors) && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
-        return $fallback;
-    }
-    return $date;
-}
-
-function parseMonthSafe(string $raw, DateTimeImmutable $fallback): DateTimeImmutable
-{
-    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $raw . '-01', new DateTimeZone('America/Bogota'));
-    $errors = DateTimeImmutable::getLastErrors();
-    if (!$date || (is_array($errors) && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
-        return $fallback->modify('first day of this month');
-    }
-    return $date;
-}
-
-function lastDigitFromPlate(string $plate): ?int
-{
-    if (preg_match_all('/\d/', $plate, $matches) && !empty($matches[0])) {
-        return (int)end($matches[0]);
-    }
-    return null;
-}
-
-function allowedDigits(DateTimeInterface $date): array
-{
-    return ((int)$date->format('j') % 2 === 0)
-        ? [6, 7, 8, 9, 0]
-        : [1, 2, 3, 4, 5];
-}
-
-function restrictedDigits(DateTimeInterface $date): array
-{
-    return ((int)$date->format('j') % 2 === 0)
-        ? [1, 2, 3, 4, 5]
-        : [6, 7, 8, 9, 0];
-}
-
-function evaluateDay(DateTimeImmutable $date, ?int $digit, DateTimeImmutable $now): array
-{
-    $holidays = colombianHolidays((int)$date->format('Y'));
-    $key = $date->format('Y-m-d');
-    $isoDay = (int)$date->format('N');
-    $isWeekend = $isoDay >= 6;
-    $holidayName = $holidays[$key] ?? null;
-    $isRegularDay = !$isWeekend && $holidayName === null;
-    $allowed = allowedDigits($date);
-    $restricted = restrictedDigits($date);
-    $isToday = $date->format('Y-m-d') === $now->format('Y-m-d');
-    $minutes = ((int)$now->format('G') * 60) + (int)$now->format('i');
-    $insideHours = $minutes >= 360 && $minutes < 1260;
-
-    if (!$isRegularDay) {
-        return [
-            'type' => 'free',
-            'title' => 'No aplica el Pico y Placa ordinario',
-            'message' => $holidayName
-                ? "La fecha seleccionada es festivo: {$holidayName}. Revisa si el Distrito anunció Pico y Placa Regional o una medida especial."
-                : 'Es fin de semana. Para vehículos particulares no aplica la restricción ordinaria; verifica medidas especiales o regionales.',
-            'allowed' => $allowed,
-            'restricted' => $restricted,
-            'holiday' => $holidayName,
-            'is_regular_day' => false,
-            'inside_hours' => false,
-            'plate_restricted' => false,
-        ];
-    }
-
-    if ($digit === null) {
-        return [
-            'type' => 'info',
-            'title' => 'Consulta una placa',
-            'message' => 'Ingresa la placa o su último dígito para saber si puede circular durante el horario de 6:00 a. m. a 9:00 p. m.',
-            'allowed' => $allowed,
-            'restricted' => $restricted,
-            'holiday' => null,
-            'is_regular_day' => true,
-            'inside_hours' => $insideHours,
-            'plate_restricted' => null,
-        ];
-    }
-
-    $plateRestricted = in_array($digit, $restricted, true);
-
-    if ($isToday && !$insideHours) {
-        return [
-            'type' => 'free',
-            'title' => 'Puede circular en este momento',
-            'message' => $plateRestricted
-                ? 'La placa sí tiene restricción hoy, pero en este momento está fuera del horario de 6:00 a. m. a 9:00 p. m.'
-                : 'La placa puede circular hoy y, además, actualmente está fuera del horario de restricción.',
-            'allowed' => $allowed,
-            'restricted' => $restricted,
-            'holiday' => null,
-            'is_regular_day' => true,
-            'inside_hours' => false,
-            'plate_restricted' => $plateRestricted,
-        ];
-    }
-
-    if ($plateRestricted) {
-        return [
-            'type' => 'danger',
-            'title' => $isToday ? 'No puede circular en el horario restringido' : 'La placa tendrá restricción',
-            'message' => 'La terminación ' . $digit . ' está restringida entre las 6:00 a. m. y las 9:00 p. m. para la fecha seleccionada.',
-            'allowed' => $allowed,
-            'restricted' => $restricted,
-            'holiday' => null,
-            'is_regular_day' => true,
-            'inside_hours' => $insideHours,
-            'plate_restricted' => true,
-        ];
-    }
-
-    return [
-        'type' => 'success',
-        'title' => $isToday ? 'Sí puede circular hoy' : 'La placa podrá circular',
-        'message' => 'La terminación ' . $digit . ' está autorizada para circular durante la fecha seleccionada, según la rotación ordinaria.',
-        'allowed' => $allowed,
-        'restricted' => $restricted,
-        'holiday' => null,
-        'is_regular_day' => true,
-        'inside_hours' => $insideHours,
-        'plate_restricted' => false,
-    ];
-}
-
-function digitList(array $digits): string
-{
-    return implode(', ', $digits);
-}
-
-$now = new DateTimeImmutable('now', new DateTimeZone('America/Bogota'));
-$today = new DateTimeImmutable('today', new DateTimeZone('America/Bogota'));
-
-$plateInput = strtoupper(trim((string)($_GET['placa'] ?? '')));
-$plateInput = preg_replace('/[^A-Z0-9-]/', '', $plateInput) ?? '';
-$plateInput = substr($plateInput, 0, 10);
-$plateDigit = lastDigitFromPlate($plateInput);
-
-$selectedDate = parseDateSafe((string)($_GET['fecha'] ?? $today->format('Y-m-d')), $today);
-$selectedMonth = parseMonthSafe((string)($_GET['mes'] ?? $selectedDate->format('Y-m')), $selectedDate);
-$result = evaluateDay($selectedDate, $plateDigit, $now);
-$todayResult = evaluateDay($today, null, $now);
-$todayAllowed = allowedDigits($today);
-$todayRestricted = restrictedDigits($today);
-$todayHolidays = colombianHolidays((int)$today->format('Y'));
-$todayHoliday = $todayHolidays[$today->format('Y-m-d')] ?? null;
-$todayIsRegular = (int)$today->format('N') <= 5 && $todayHoliday === null;
-
-$firstDay = $selectedMonth->modify('first day of this month');
-$daysInMonth = (int)$selectedMonth->format('t');
-$startOffset = (int)$firstDay->format('N') - 1;
-$monthHolidays = colombianHolidays((int)$selectedMonth->format('Y'));
-$previousMonth = $selectedMonth->modify('-1 month')->format('Y-m');
-$nextMonth = $selectedMonth->modify('+1 month')->format('Y-m');
-
-$baseQuery = [];
-if ($plateInput !== '') $baseQuery['placa'] = $plateInput;
-$baseQuery['fecha'] = $selectedDate->format('Y-m-d');
-
-$faqItems = [
-    [
-        'q' => '¿Cuál es el horario del Pico y Placa para particulares en Bogotá?',
-        'a' => 'La restricción ordinaria para vehículos particulares aplica de lunes a viernes, entre las 6:00 a. m. y las 9:00 p. m., salvo festivos o modificaciones especiales anunciadas por el Distrito.'
-    ],
-    [
-        'q' => '¿Qué placas pueden circular los días impares?',
-        'a' => 'En los días impares pueden circular los vehículos particulares cuya placa termina en 1, 2, 3, 4 o 5.'
-    ],
-    [
-        'q' => '¿Qué placas pueden circular los días pares?',
-        'a' => 'En los días pares pueden circular los vehículos particulares cuya placa termina en 6, 7, 8, 9 o 0.'
-    ],
-    [
-        'q' => '¿Cuánto cuesta la multa por incumplir el Pico y Placa en 2026?',
-        'a' => 'La sanción informada por la Secretaría Distrital de Movilidad para 2026 es de $633.200, además de la posible inmovilización del vehículo y costos asociados.'
-    ],
-    [
-        'q' => '¿Cuánto cuesta el Pico y Placa Solidario en 2026?',
-        'a' => 'Los valores base de 2026 son $70.294 por un día, $561.808 por un mes y $2.809.311 por seis meses. El valor final cambia según avalúo, impacto ambiental y municipio de matrícula.'
-    ],
-    [
-        'q' => '¿El Pico y Placa aplica los sábados, domingos y festivos?',
-        'a' => 'La restricción ordinaria para vehículos particulares no aplica en fines de semana ni festivos. Sin embargo, puede existir Pico y Placa Regional, Día sin Carro u otra medida especial.'
-    ],
-];
-
-$faqSchema = [];
-foreach ($faqItems as $item) {
-    $faqSchema[] = [
-        '@type' => 'Question',
-        'name' => $item['q'],
-        'acceptedAnswer' => [
-            '@type' => 'Answer',
-            'text' => $item['a'],
-        ],
-    ];
-}
-?>
 <!doctype html>
 <html lang="es-CO">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#071f49">
-    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-    <title><?= e($pageTitle) ?></title>
-    <meta name="description" content="<?= e($metaDescription) ?>">
-    <link rel="canonical" href="<?= e($canonicalUrl) ?>">
-
-    <meta property="og:locale" content="es_CO">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="<?= e($pageTitle) ?>">
-    <meta property="og:description" content="<?= e($metaDescription) ?>">
-    <meta property="og:url" content="<?= e($canonicalUrl) ?>">
-    <meta property="og:site_name" content="<?= e($siteName) ?>">
-    <meta property="og:image" content="<?= e($canonicalUrl) ?>?asset=og">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<?= e($pageTitle) ?>">
-    <meta name="twitter:description" content="<?= e($metaDescription) ?>">
-    <meta name="twitter:image" content="<?= e($canonicalUrl) ?>?asset=og">
-
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-    <script type="application/ld+json">
-    <?= json_encode([
-        '@context' => 'https://schema.org',
-        '@type' => 'WebPage',
-        'name' => $pageTitle,
-        'description' => $metaDescription,
-        'url' => $canonicalUrl,
-        'inLanguage' => 'es-CO',
-        'dateModified' => $dataVersion,
-        'about' => [
-            '@type' => 'Thing',
-            'name' => 'Pico y Placa de Bogotá',
-        ],
-        'publisher' => [
-            '@type' => 'Organization',
-            'name' => $siteName,
-        ],
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
-    </script>
-
-    <script type="application/ld+json">
-    <?= json_encode([
-        '@context' => 'https://schema.org',
-        '@type' => 'FAQPage',
-        'mainEntity' => $faqSchema,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
-    </script>
-
-    <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#071f49" name="theme-color"/>
+<meta content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" name="robots"/>
+<title>Pico y Placa Bogotá hoy 2026: horario, placas, calendario y tarifas</title>
+<meta content="Consulta el Pico y Placa de Bogotá hoy: placas que pueden circular, horario 6 a. m. a 9 p. m., calendario, multa, Pico y Placa Solidario y regional." name="description"/>
+<link href="https://www.tudominio.com/pico-y-placa-bogota.html" rel="canonical"/>
+<meta content="es_CO" property="og:locale"/>
+<meta content="website" property="og:type"/>
+<meta content="Pico y Placa Bogotá hoy 2026: horario, placas, calendario y tarifas" property="og:title"/>
+<meta content="Consulta el Pico y Placa de Bogotá hoy: placas que pueden circular, horario 6 a. m. a 9 p. m., calendario, multa, Pico y Placa Solidario y regional." property="og:description"/>
+<meta content="https://www.tudominio.com/pico-y-placa-bogota.html" property="og:url"/>
+<meta content="Movilidad Bogotá Hoy" property="og:site_name"/>
+<meta content="https://www.tudominio.com/pico-y-placa-bogota-og.svg" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Pico y Placa Bogotá hoy 2026: horario, placas, calendario y tarifas" name="twitter:title"/>
+<meta content="Consulta el Pico y Placa de Bogotá hoy: placas que pueden circular, horario 6 a. m. a 9 p. m., calendario, multa, Pico y Placa Solidario y regional." name="twitter:description"/>
+<meta content="https://www.tudominio.com/pico-y-placa-bogota-og.svg" name="twitter:image"/>
+<link crossorigin="" href="https://cdn.jsdelivr.net" rel="preconnect"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Pico y Placa Bogotá hoy 2026: horario, placas, calendario y tarifas",
+    "description": "Consulta el Pico y Placa de Bogotá hoy: placas que pueden circular, horario 6 a. m. a 9 p. m., calendario, multa, Pico y Placa Solidario y regional.",
+    "url": "https://www.tudominio.com/pico-y-placa-bogota.html",
+    "inLanguage": "es-CO",
+    "dateModified": "2026-08-02",
+    "about": {
+        "@type": "Thing",
+        "name": "Pico y Placa de Bogotá"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "Movilidad Bogotá Hoy"
+    }
+}    </script>
+<script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "¿Cuál es el horario del Pico y Placa para particulares en Bogotá?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "La restricción ordinaria para vehículos particulares aplica de lunes a viernes, entre las 6:00 a. m. y las 9:00 p. m., salvo festivos o modificaciones especiales anunciadas por el Distrito."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "¿Qué placas pueden circular los días impares?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "En los días impares pueden circular los vehículos particulares cuya placa termina en 1, 2, 3, 4 o 5."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "¿Qué placas pueden circular los días pares?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "En los días pares pueden circular los vehículos particulares cuya placa termina en 6, 7, 8, 9 o 0."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "¿Cuánto cuesta la multa por incumplir el Pico y Placa en 2026?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "La sanción informada por la Secretaría Distrital de Movilidad para 2026 es de $633.200, además de la posible inmovilización del vehículo y costos asociados."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "¿Cuánto cuesta el Pico y Placa Solidario en 2026?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Los valores base de 2026 son $70.294 por un día, $561.808 por un mes y $2.809.311 por seis meses. El valor final cambia según avalúo, impacto ambiental y municipio de matrícula."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "¿El Pico y Placa aplica los sábados, domingos y festivos?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "La restricción ordinaria para vehículos particulares no aplica en fines de semana ni festivos. Sin embargo, puede existir Pico y Placa Regional, Día sin Carro u otra medida especial."
+            }
+        }
+    ]
+}    </script>
+<style>
         :root {
             --navy: #071f49;
             --navy-2: #0b2c64;
@@ -741,578 +418,610 @@ foreach ($faqItems as $item) {
     </style>
 </head>
 <body>
-    <div class="topbar">
-        <div class="container topbar-inner">
-            <span><i class="bi bi-shield-check"></i> Información revisada con fuentes oficiales · Actualización: 2 de agosto de 2026</span>
-            <a href="#fuentes">Ver fuentes oficiales</a>
-        </div>
-    </div>
-
-    <nav class="navbar" aria-label="Navegación principal">
-        <div class="container nav-inner">
-            <a class="brand" href="#inicio" aria-label="Inicio">
-                <span class="brand-mark"><i class="bi bi-car-front-fill"></i></span>
-                <span><?= e($siteName) ?></span>
-            </a>
-            <div class="nav-links">
-                <a href="#consultar">Consultar placa</a>
-                <a href="#calendario">Calendario</a>
-                <a href="#tarifas">Tarifas</a>
-                <a href="#regional">Regional</a>
-                <a class="nav-cta" href="<?= e($officialSolidario) ?>" target="_blank" rel="noopener noreferrer">Permiso Solidario</a>
-            </div>
-        </div>
-    </nav>
-
-    <header id="inicio" class="hero">
-        <div class="container hero-grid">
-            <div>
-                <span class="eyebrow"><i class="bi bi-geo-alt-fill"></i> Bogotá, Colombia</span>
-                <h1>Pico y Placa Bogotá hoy</h1>
-                <p class="lead">Consulta en segundos si tu vehículo particular puede circular, revisa el calendario mensual, las tarifas del permiso solidario, la multa y el Pico y Placa Regional.</p>
-                <div class="hero-actions">
-                    <a class="btn btn-primary" href="#consultar"><i class="bi bi-search"></i> Consultar mi placa</a>
-                    <a class="btn btn-light" href="#regla"><i class="bi bi-calendar3"></i> Ver cómo funciona</a>
-                </div>
-                <div class="hero-pills">
-                    <span class="hero-pill"><i class="bi bi-clock-fill"></i> 6:00 a. m. a 9:00 p. m.</span>
-                    <span class="hero-pill"><i class="bi bi-calendar-week-fill"></i> Lunes a viernes</span>
-                    <span class="hero-pill"><i class="bi bi-car-front-fill"></i> Vehículos particulares</span>
-                </div>
-            </div>
-
-            <div class="hero-card" aria-label="Ilustración de movilidad en Bogotá">
-                <svg viewBox="0 0 680 520" role="img" aria-labelledby="svgTitle svgDesc">
-                    <title id="svgTitle">Ilustración de tráfico y Pico y Placa en Bogotá</title>
-                    <desc id="svgDesc">Montañas, edificios, carretera, automóvil y señal vial.</desc>
-                    <defs>
-                        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0" stop-color="#8deff0"/>
-                            <stop offset="1" stop-color="#dff8ff"/>
-                        </linearGradient>
-                        <linearGradient id="roadGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0" stop-color="#415574"/>
-                            <stop offset="1" stop-color="#162944"/>
-                        </linearGradient>
-                        <filter id="shadowCar" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#071f49" flood-opacity=".28"/>
-                        </filter>
-                    </defs>
-                    <rect x="12" y="12" width="656" height="496" rx="32" fill="url(#skyGrad)"/>
-                    <circle cx="550" cy="92" r="42" fill="#ffd05a" opacity=".95"/>
-                    <path d="M12 282 L112 172 L185 250 L283 142 L400 278 L500 185 L668 302 L668 508 L12 508 Z" fill="#74a998" opacity=".68"/>
-                    <path d="M12 316 L126 228 L207 293 L323 190 L448 320 L568 242 L668 320 L668 508 L12 508 Z" fill="#326f73" opacity=".9"/>
-                    <g opacity=".95">
-                        <rect x="55" y="250" width="62" height="130" rx="4" fill="#f0f5fb"/>
-                        <rect x="125" y="286" width="54" height="94" rx="4" fill="#cbd8e9"/>
-                        <rect x="190" y="230" width="72" height="150" rx="4" fill="#e8eff8"/>
-                        <rect x="272" y="275" width="55" height="105" rx="4" fill="#b8c9dc"/>
-                        <rect x="337" y="238" width="82" height="142" rx="4" fill="#f3f6fb"/>
-                        <rect x="430" y="290" width="57" height="90" rx="4" fill="#c9d6e6"/>
-                    </g>
-                    <path d="M145 508 L268 328 L412 328 L548 508 Z" fill="url(#roadGrad)"/>
-                    <path d="M334 338 L346 338 L354 385 L328 385 Z" fill="#fff" opacity=".9"/>
-                    <path d="M320 409 L362 409 L380 478 L300 478 Z" fill="#fff" opacity=".9"/>
-                    <g transform="translate(240 333)" filter="url(#shadowCar)">
-                        <path d="M45 70 L75 25 Q85 10 105 10 H215 Q235 10 247 28 L274 70 Z" fill="#1260d6"/>
-                        <path d="M92 26 H207 Q218 26 225 38 L244 68 H67 L84 38 Q88 26 92 26Z" fill="#d9f4ff"/>
-                        <rect x="26" y="65" width="270" height="90" rx="30" fill="#2f7ff0"/>
-                        <rect x="48" y="90" width="200" height="28" rx="10" fill="#0a367b" opacity=".45"/>
-                        <circle cx="80" cy="152" r="27" fill="#132a48"/><circle cx="80" cy="152" r="12" fill="#a7bed8"/>
-                        <circle cx="244" cy="152" r="27" fill="#132a48"/><circle cx="244" cy="152" r="12" fill="#a7bed8"/>
-                        <rect x="134" y="124" width="58" height="24" rx="5" fill="#fff"/>
-                        <text x="142" y="141" fill="#071f49" font-size="13" font-family="Arial" font-weight="700">BOG 26</text>
-                        <circle cx="56" cy="94" r="10" fill="#fff4a2"/><circle cx="266" cy="94" r="10" fill="#ff7777"/>
-                    </g>
-                    <g transform="translate(502 116)">
-                        <rect x="51" y="140" width="14" height="150" rx="7" fill="#53657d"/>
-                        <circle cx="58" cy="85" r="76" fill="#fff" stroke="#cf3448" stroke-width="14"/>
-                        <text x="58" y="72" text-anchor="middle" fill="#071f49" font-size="29" font-family="Arial" font-weight="900">PICO</text>
-                        <text x="58" y="108" text-anchor="middle" fill="#071f49" font-size="29" font-family="Arial" font-weight="900">Y PLACA</text>
-                    </g>
-                </svg>
-
-                <div class="hero-status">
-                    <strong><?= e(ucfirst(longDateEs($today))) ?></strong>
-                    <span>
-                        <?php if (!$todayIsRegular): ?>
-                            Sin restricción ordinaria<?= $todayHoliday ? ' · ' . e($todayHoliday) : '' ?>
-                        <?php else: ?>
-                            Circulan: <?= e(digitList($todayAllowed)) ?> · Restringidas: <?= e(digitList($todayRestricted)) ?>
-                        <?php endif; ?>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="quick-strip">
-        <div class="container quick-grid">
-            <div class="quick-item">
-                <span class="quick-icon"><i class="bi bi-clock-history"></i></span>
-                <strong>Horario</strong>
-                <span>6:00 a. m. a 9:00 p. m.</span>
-            </div>
-            <div class="quick-item">
-                <span class="quick-icon"><i class="bi bi-calendar2-week"></i></span>
-                <strong>Días</strong>
-                <span>Lunes a viernes no festivos</span>
-            </div>
-            <div class="quick-item">
-                <span class="quick-icon"><i class="bi bi-cash-coin"></i></span>
-                <strong>Multa 2026</strong>
-                <span>$633.200 + posible inmovilización</span>
-            </div>
-            <div class="quick-item">
-                <span class="quick-icon"><i class="bi bi-ticket-perforated"></i></span>
-                <strong>Permiso diario</strong>
-                <span>Valor base desde $70.294</span>
-            </div>
-        </div>
-    </div>
-
-    <main>
-        <section id="consultar" class="section">
-            <div class="container">
-                <span class="eyebrow"><i class="bi bi-search"></i> Consulta personalizada</span>
-                <h2>¿Tu placa puede circular?</h2>
-                <p class="section-intro">Escribe la placa completa o únicamente su último número. El sistema tiene en cuenta fines de semana y festivos nacionales de Colombia.</p>
-
-                <div class="checker-wrap">
-                    <form class="card checker-card" method="get" action="#consultar">
-                        <div class="form-grid">
-                            <div class="field">
-                                <label for="placa">Placa o último dígito</label>
-                                <input class="plate-input" id="placa" name="placa" type="text" value="<?= e($plateInput) ?>" placeholder="ABC123" maxlength="10" autocomplete="off" inputmode="text" aria-describedby="plateHelp">
-                                <span id="plateHelp" class="helper">Ejemplos: ABC123, 123 o simplemente 3.</span>
-                            </div>
-                            <div class="field">
-                                <label for="fecha">Fecha de consulta</label>
-                                <input id="fecha" name="fecha" type="date" value="<?= e($selectedDate->format('Y-m-d')) ?>">
-                            </div>
-                            <div class="field full">
-                                <label for="mes">Mes del calendario</label>
-                                <input id="mes" name="mes" type="month" value="<?= e($selectedMonth->format('Y-m')) ?>">
-                            </div>
-                            <div class="field full form-actions">
-                                <button class="btn btn-blue" type="submit"><i class="bi bi-check2-circle"></i> Consultar ahora</button>
-                                <a class="btn btn-outline" href="<?= e(strtok($_SERVER['REQUEST_URI'] ?? '', '?') ?: 'pico-y-placa-bogota.php') ?>#consultar"><i class="bi bi-arrow-counterclockwise"></i> Limpiar</a>
-                            </div>
-                        </div>
-                    </form>
-
-                    <article class="card result-card <?= e($result['type']) ?>" aria-live="polite">
-                        <span class="result-icon">
-                            <?php if ($result['type'] === 'danger'): ?>
-                                <i class="bi bi-x-octagon-fill"></i>
-                            <?php elseif ($result['type'] === 'success' || $result['type'] === 'free'): ?>
-                                <i class="bi bi-check-circle-fill"></i>
-                            <?php else: ?>
-                                <i class="bi bi-info-circle-fill"></i>
-                            <?php endif; ?>
-                        </span>
-                        <span class="eyebrow"><?= e(ucfirst(longDateEs($selectedDate))) ?></span>
-                        <h3><?= e($result['title']) ?></h3>
-                        <p><?= e($result['message']) ?></p>
-                        <div class="result-meta">
-                            <span class="tag"><i class="bi bi-check2"></i> Circulan: <?= e(digitList($result['allowed'])) ?></span>
-                            <span class="tag"><i class="bi bi-slash-circle"></i> Restringidas: <?= e(digitList($result['restricted'])) ?></span>
-                            <?php if ($plateDigit !== null): ?>
-                                <span class="tag"><i class="bi bi-car-front"></i> Terminación: <?= e((string)$plateDigit) ?></span>
-                            <?php endif; ?>
-                        </div>
-                    </article>
-                </div>
-
-                <div class="notice" style="margin-top:22px">
-                    <strong><i class="bi bi-exclamation-triangle-fill"></i> Importante:</strong>
+<div class="topbar">
+<div class="container topbar-inner">
+<span><i class="bi bi-shield-check"></i> Información revisada con fuentes oficiales · Actualización: 2 de agosto de 2026</span>
+<a href="#fuentes">Ver fuentes oficiales</a>
+</div>
+</div>
+<nav aria-label="Navegación principal" class="navbar">
+<div class="container nav-inner">
+<a aria-label="Inicio" class="brand" href="#inicio">
+<span class="brand-mark"><i class="bi bi-car-front-fill"></i></span>
+<span>Movilidad Bogotá Hoy</span>
+</a>
+<div class="nav-links">
+<a href="#consultar">Consultar placa</a>
+<a href="#calendario">Calendario</a>
+<a href="#tarifas">Tarifas</a>
+<a href="#regional">Regional</a>
+<a class="nav-cta" href="https://picoyplacasolidario.movilidadbogota.gov.co/" rel="noopener noreferrer" target="_blank">Permiso Solidario</a>
+</div>
+</div>
+</nav>
+<header class="hero" id="inicio">
+<div class="container hero-grid">
+<div>
+<span class="eyebrow"><i class="bi bi-geo-alt-fill"></i> Bogotá, Colombia</span>
+<h1>Pico y Placa Bogotá hoy</h1>
+<p class="lead">Consulta en segundos si tu vehículo particular puede circular, revisa el calendario mensual, las tarifas del permiso solidario, la multa y el Pico y Placa Regional.</p>
+<div class="hero-actions">
+<a class="btn btn-primary" href="#consultar"><i class="bi bi-search"></i> Consultar mi placa</a>
+<a class="btn btn-light" href="#regla"><i class="bi bi-calendar3"></i> Ver cómo funciona</a>
+</div>
+<div class="hero-pills">
+<span class="hero-pill"><i class="bi bi-clock-fill"></i> 6:00 a. m. a 9:00 p. m.</span>
+<span class="hero-pill"><i class="bi bi-calendar-week-fill"></i> Lunes a viernes</span>
+<span class="hero-pill"><i class="bi bi-car-front-fill"></i> Vehículos particulares</span>
+</div>
+</div>
+<div aria-label="Ilustración de movilidad en Bogotá" class="hero-card">
+<svg aria-labelledby="svgTitle svgDesc" role="img" viewbox="0 0 680 520">
+<title id="svgTitle">Ilustración de tráfico y Pico y Placa en Bogotá</title>
+<desc id="svgDesc">Montañas, edificios, carretera, automóvil y señal vial.</desc>
+<defs>
+<lineargradient id="skyGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#8deff0"></stop>
+<stop offset="1" stop-color="#dff8ff"></stop>
+</lineargradient>
+<lineargradient id="roadGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#415574"></stop>
+<stop offset="1" stop-color="#162944"></stop>
+</lineargradient>
+<filter height="140%" id="shadowCar" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="14" flood-color="#071f49" flood-opacity=".28" stddeviation="12"></fedropshadow>
+</filter>
+</defs>
+<rect fill="url(#skyGrad)" height="496" rx="32" width="656" x="12" y="12"></rect>
+<circle cx="550" cy="92" fill="#ffd05a" opacity=".95" r="42"></circle>
+<path d="M12 282 L112 172 L185 250 L283 142 L400 278 L500 185 L668 302 L668 508 L12 508 Z" fill="#74a998" opacity=".68"></path>
+<path d="M12 316 L126 228 L207 293 L323 190 L448 320 L568 242 L668 320 L668 508 L12 508 Z" fill="#326f73" opacity=".9"></path>
+<g opacity=".95">
+<rect fill="#f0f5fb" height="130" rx="4" width="62" x="55" y="250"></rect>
+<rect fill="#cbd8e9" height="94" rx="4" width="54" x="125" y="286"></rect>
+<rect fill="#e8eff8" height="150" rx="4" width="72" x="190" y="230"></rect>
+<rect fill="#b8c9dc" height="105" rx="4" width="55" x="272" y="275"></rect>
+<rect fill="#f3f6fb" height="142" rx="4" width="82" x="337" y="238"></rect>
+<rect fill="#c9d6e6" height="90" rx="4" width="57" x="430" y="290"></rect>
+</g>
+<path d="M145 508 L268 328 L412 328 L548 508 Z" fill="url(#roadGrad)"></path>
+<path d="M334 338 L346 338 L354 385 L328 385 Z" fill="#fff" opacity=".9"></path>
+<path d="M320 409 L362 409 L380 478 L300 478 Z" fill="#fff" opacity=".9"></path>
+<g filter="url(#shadowCar)" transform="translate(240 333)">
+<path d="M45 70 L75 25 Q85 10 105 10 H215 Q235 10 247 28 L274 70 Z" fill="#1260d6"></path>
+<path d="M92 26 H207 Q218 26 225 38 L244 68 H67 L84 38 Q88 26 92 26Z" fill="#d9f4ff"></path>
+<rect fill="#2f7ff0" height="90" rx="30" width="270" x="26" y="65"></rect>
+<rect fill="#0a367b" height="28" opacity=".45" rx="10" width="200" x="48" y="90"></rect>
+<circle cx="80" cy="152" fill="#132a48" r="27"></circle><circle cx="80" cy="152" fill="#a7bed8" r="12"></circle>
+<circle cx="244" cy="152" fill="#132a48" r="27"></circle><circle cx="244" cy="152" fill="#a7bed8" r="12"></circle>
+<rect fill="#fff" height="24" rx="5" width="58" x="134" y="124"></rect>
+<text fill="#071f49" font-family="Arial" font-size="13" font-weight="700" x="142" y="141">BOG 26</text>
+<circle cx="56" cy="94" fill="#fff4a2" r="10"></circle><circle cx="266" cy="94" fill="#ff7777" r="10"></circle>
+</g>
+<g transform="translate(502 116)">
+<rect fill="#53657d" height="150" rx="7" width="14" x="51" y="140"></rect>
+<circle cx="58" cy="85" fill="#fff" r="76" stroke="#cf3448" stroke-width="14"></circle>
+<text fill="#071f49" font-family="Arial" font-size="29" font-weight="900" text-anchor="middle" x="58" y="72">PICO</text>
+<text fill="#071f49" font-family="Arial" font-size="29" font-weight="900" text-anchor="middle" x="58" y="108">Y PLACA</text>
+</g>
+</svg>
+<div class="hero-status">
+<strong id="heroTodayDate">Domingo 2 de agosto de 2026</strong>
+<span id="heroTodayStatus">
+                                                    Sin restricción ordinaria                                            </span>
+</div>
+</div>
+</div>
+</header>
+<div class="quick-strip">
+<div class="container quick-grid">
+<div class="quick-item">
+<span class="quick-icon"><i class="bi bi-clock-history"></i></span>
+<strong>Horario</strong>
+<span>6:00 a. m. a 9:00 p. m.</span>
+</div>
+<div class="quick-item">
+<span class="quick-icon"><i class="bi bi-calendar2-week"></i></span>
+<strong>Días</strong>
+<span>Lunes a viernes no festivos</span>
+</div>
+<div class="quick-item">
+<span class="quick-icon"><i class="bi bi-cash-coin"></i></span>
+<strong>Multa 2026</strong>
+<span>$633.200 + posible inmovilización</span>
+</div>
+<div class="quick-item">
+<span class="quick-icon"><i class="bi bi-ticket-perforated"></i></span>
+<strong>Permiso diario</strong>
+<span>Valor base desde $70.294</span>
+</div>
+</div>
+</div>
+<main><noscript><div class="container notice" style="margin-top:24px">Activa JavaScript para utilizar el consultor de placa y el calendario personalizado.</div></noscript>
+<section class="section" id="consultar">
+<div class="container">
+<span class="eyebrow"><i class="bi bi-search"></i> Consulta personalizada</span>
+<h2>¿Tu placa puede circular?</h2>
+<p class="section-intro">Escribe la placa completa o únicamente su último número. El sistema tiene en cuenta fines de semana y festivos nacionales de Colombia.</p>
+<div class="checker-wrap">
+<form action="" class="card checker-card" id="plateCheckerForm" method="get" novalidate="">
+<div class="form-grid">
+<div class="field">
+<label for="placa">Placa o último dígito</label>
+<input aria-describedby="plateHelp" autocomplete="off" class="plate-input" id="placa" inputmode="text" maxlength="10" name="placa" placeholder="ABC123" type="text" value=""/>
+<span class="helper" id="plateHelp">Ejemplos: ABC123, 123 o simplemente 3.</span>
+</div>
+<div class="field">
+<label for="fecha">Fecha de consulta</label>
+<input id="fecha" name="fecha" type="date" value="2026-08-02"/>
+</div>
+<div class="field full">
+<label for="mes">Mes del calendario</label>
+<input id="mes" name="mes" type="month" value="2026-08"/>
+</div>
+<div class="field full form-actions">
+<button class="btn btn-blue" type="submit"><i class="bi bi-check2-circle"></i> Consultar ahora</button>
+<a class="btn btn-outline" href="#consultar" id="clearChecker"><i class="bi bi-arrow-counterclockwise"></i> Limpiar</a>
+</div>
+</div>
+</form>
+<article aria-live="polite" class="card result-card free" id="resultCard">
+<span class="result-icon">
+<i class="bi bi-check-circle-fill"></i>
+</span>
+<span class="eyebrow">Domingo 2 de agosto de 2026</span>
+<h3>No aplica el Pico y Placa ordinario</h3>
+<p>Es fin de semana. Para vehículos particulares no aplica la restricción ordinaria; verifica medidas especiales o regionales.</p>
+<div class="result-meta">
+<span class="tag"><i class="bi bi-check2"></i> Circulan: 6, 7, 8, 9, 0</span>
+<span class="tag"><i class="bi bi-slash-circle"></i> Restringidas: 1, 2, 3, 4, 5</span>
+</div>
+</article>
+</div>
+<div class="notice" style="margin-top:22px">
+<strong><i class="bi bi-exclamation-triangle-fill"></i> Importante:</strong>
                     esta herramienta informa la rotación ordinaria de vehículos particulares. No reemplaza las comunicaciones oficiales sobre Pico y Placa Regional, Día sin Carro, cierres, emergencias o cambios temporales.
                 </div>
-
-                <!-- ESPACIO PUBLICITARIO: inserta aquí un bloque responsive de Google AdSense/Google Ad Manager. -->
-                <div class="ad-slot" aria-label="Espacio publicitario">
-                    <div><i class="bi bi-badge-ad" style="font-size:1.35rem"></i><br>Espacio recomendado para anuncio responsive<br><small>Evita colocar anuncios pegados al botón de consulta.</small></div>
+<!-- ESPACIO PUBLICITARIO: inserta aquí un bloque responsive de Google AdSense/Google Ad Manager. -->
+<div aria-label="Espacio publicitario" class="ad-slot">
+<div><i class="bi bi-badge-ad" style="font-size:1.35rem"></i><br/>Espacio recomendado para anuncio responsive<br/><small>Evita colocar anuncios pegados al botón de consulta.</small></div>
+</div>
+</div>
+</section>
+<section class="section" id="regla" style="background:#eef5fd">
+<div class="container">
+<span class="eyebrow"><i class="bi bi-sign-turn-right-fill"></i> Regla vigente</span>
+<h2>¿Cómo funciona el Pico y Placa en Bogotá?</h2>
+<p class="section-intro">La rotación se define por el número del día del calendario y el último dígito de la placa. La regla indica cuáles placas <strong>sí pueden circular</strong>.</p>
+<div class="rule-grid">
+<article class="card rule-card odd">
+<span class="eyebrow">Días impares</span>
+<h3>Circulan las placas terminadas en 1, 2, 3, 4 y 5</h3>
+<div aria-label="Placas autorizadas en días impares" class="rule-number">
+<span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">4</span><span class="digit">5</span> </div>
+<p class="muted">Ejemplo: el lunes 3 de agosto de 2026 es día impar; durante el horario de restricción pueden circular las terminaciones 1 a 5.</p>
+</article>
+<article class="card rule-card even">
+<span class="eyebrow">Días pares</span>
+<h3>Circulan las placas terminadas en 6, 7, 8, 9 y 0</h3>
+<div aria-label="Placas autorizadas en días pares" class="rule-number">
+<span class="digit">6</span><span class="digit">7</span><span class="digit">8</span><span class="digit">9</span><span class="digit">0</span> </div>
+<p class="muted">Ejemplo: el martes 4 de agosto de 2026 es día par; durante el horario de restricción pueden circular las terminaciones 6 a 0.</p>
+</article>
+</div>
+</div>
+</section>
+<section class="section" id="calendario">
+<div class="container">
+<span class="eyebrow"><i class="bi bi-calendar3"></i> Planea tus recorridos</span>
+<h2 id="calendarTitle">Calendario de agosto de 2026</h2>
+<p class="section-intro" id="calendarIntro">
+                                            Ingresa una placa en el formulario para ver un calendario personalizado. Sin placa, cada día muestra las terminaciones autorizadas.
+                                    </p>
+<div class="calendar-toolbar">
+<div class="month-nav">
+<a aria-label="Mes anterior" class="icon-btn" href="#calendario" id="previousMonth"><i class="bi bi-chevron-left"></i></a>
+<strong id="calendarMonthLabel">Agosto 2026</strong>
+<a aria-label="Mes siguiente" class="icon-btn" href="#calendario" id="nextMonth"><i class="bi bi-chevron-right"></i></a>
+</div>
+<a class="btn btn-outline" href="#calendario" id="currentMonth"><i class="bi bi-calendar-check"></i> Ir al mes actual</a>
+</div>
+<div class="calendar-scroll">
+<div aria-label="Calendario mensual de Pico y Placa" class="calendar" id="calendarGrid" role="grid">
+<div class="calendar-head" role="columnheader">Lun</div>
+<div class="calendar-head" role="columnheader">Mar</div>
+<div class="calendar-head" role="columnheader">Mié</div>
+<div class="calendar-head" role="columnheader">Jue</div>
+<div class="calendar-head" role="columnheader">Vie</div>
+<div class="calendar-head" role="columnheader">Sáb</div>
+<div class="calendar-head" role="columnheader">Dom</div>
+<div aria-hidden="true" class="calendar-day blank"></div>
+<div aria-hidden="true" class="calendar-day blank"></div>
+<div aria-hidden="true" class="calendar-day blank"></div>
+<div aria-hidden="true" class="calendar-day blank"></div>
+<div aria-hidden="true" class="calendar-day blank"></div>
+<div aria-label="sábado 1 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">1</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="domingo 2 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free today" role="gridcell">
+<span class="day-num">2</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="lunes 3 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">3</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="martes 4 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">4</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="miércoles 5 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">5</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="jueves 6 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">6</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="viernes 7 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">7</span>
+<span class="day-state">Sin restricción ordinaria</span>
+<span class="day-holiday">Batalla de Boyacá</span> </div>
+<div aria-label="sábado 8 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">8</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="domingo 9 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">9</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="lunes 10 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">10</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="martes 11 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">11</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="miércoles 12 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">12</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="jueves 13 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">13</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="viernes 14 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">14</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="sábado 15 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">15</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="domingo 16 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">16</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="lunes 17 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">17</span>
+<span class="day-state">Sin restricción ordinaria</span>
+<span class="day-holiday">Asunción de la Virgen</span> </div>
+<div aria-label="martes 18 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">18</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="miércoles 19 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">19</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="jueves 20 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">20</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="viernes 21 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">21</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="sábado 22 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">22</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="domingo 23 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">23</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="lunes 24 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">24</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="martes 25 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">25</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="miércoles 26 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">26</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="jueves 27 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">27</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+<div aria-label="viernes 28 de agosto de 2026: Circulan: 6, 7, 8, 9, 0" class="calendar-day allowed" role="gridcell">
+<span class="day-num">28</span>
+<span class="day-state">Circulan: 6, 7, 8, 9, 0</span>
+</div>
+<div aria-label="sábado 29 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">29</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="domingo 30 de agosto de 2026: Sin restricción ordinaria" class="calendar-day free" role="gridcell">
+<span class="day-num">30</span>
+<span class="day-state">Sin restricción ordinaria</span>
+</div>
+<div aria-label="lunes 31 de agosto de 2026: Circulan: 1, 2, 3, 4, 5" class="calendar-day allowed" role="gridcell">
+<span class="day-num">31</span>
+<span class="day-state">Circulan: 1, 2, 3, 4, 5</span>
+</div>
+</div>
+</div>
+<div class="legend">
+<span class="legend-item"><span class="dot green"></span> Puede circular / placas autorizadas</span>
+<span class="legend-item"><span class="dot red"></span> Restricción para tu placa</span>
+<span class="legend-item"><span class="dot gray"></span> Fin de semana o festivo</span>
+</div>
+</div>
+</section>
+<section class="section" id="tarifas" style="background:#eef5fd">
+<div class="container">
+<span class="eyebrow"><i class="bi bi-credit-card-2-front-fill"></i> Pico y Placa Solidario</span>
+<h2>Tarifas base para circular en días restringidos</h2>
+<p class="section-intro">El permiso permite circular voluntariamente durante la restricción ordinaria. Los siguientes son valores base de 2026; la plataforma oficial calcula el precio final según avalúo, impacto ambiental y municipio de matrícula.</p>
+<div class="pricing-grid">
+<article class="card price-card">
+<span class="price-label">Permiso diario</span>
+<div class="price">$70.294</div>
+<span class="price-note">Valor base 2026</span>
+<ul class="price-list">
+<li><i class="bi bi-check-circle-fill"></i><span>Para una fecha específica.</span></li>
+<li><i class="bi bi-check-circle-fill"></i><span>Ideal para diligencias puntuales.</span></li>
+<li><i class="bi bi-info-circle-fill"></i><span>Debe quedar aprobado antes de circular.</span></li>
+</ul>
+</article>
+<article class="card price-card featured">
+<span class="badge-popular">MÁS CONSULTADO</span>
+<span class="price-label">Permiso mensual</span>
+<div class="price">$561.808</div>
+<span class="price-note">Valor base 2026</span>
+<ul class="price-list">
+<li><i class="bi bi-check-circle-fill"></i><span>Vigencia aproximada de un mes.</span></li>
+<li><i class="bi bi-check-circle-fill"></i><span>Útil para uso frecuente.</span></li>
+<li><i class="bi bi-info-circle-fill"></i><span>El valor final puede aumentar.</span></li>
+</ul>
+</article>
+<article class="card price-card">
+<span class="price-label">Permiso semestral</span>
+<div class="price">$2.809.311</div>
+<span class="price-note">Valor base 2026</span>
+<ul class="price-list">
+<li><i class="bi bi-check-circle-fill"></i><span>Vigencia de seis meses.</span></li>
+<li><i class="bi bi-check-circle-fill"></i><span>Para desplazamientos continuos.</span></li>
+<li><i class="bi bi-info-circle-fill"></i><span>No sustituye otras restricciones especiales.</span></li>
+</ul>
+</article>
+</div>
+<div class="notice" style="margin-top:26px">
+<strong>Vehículos matriculados fuera de Bogotá:</strong> en 2026 el factor territorial informado por el Distrito pasó de 1,2 a 1,5. Por eso el total puede ser mayor que los valores base mostrados.
                 </div>
-            </div>
-        </section>
-
-        <section id="regla" class="section" style="background:#eef5fd">
-            <div class="container">
-                <span class="eyebrow"><i class="bi bi-sign-turn-right-fill"></i> Regla vigente</span>
-                <h2>¿Cómo funciona el Pico y Placa en Bogotá?</h2>
-                <p class="section-intro">La rotación se define por el número del día del calendario y el último dígito de la placa. La regla indica cuáles placas <strong>sí pueden circular</strong>.</p>
-
-                <div class="rule-grid">
-                    <article class="card rule-card odd">
-                        <span class="eyebrow">Días impares</span>
-                        <h3>Circulan las placas terminadas en 1, 2, 3, 4 y 5</h3>
-                        <div class="rule-number" aria-label="Placas autorizadas en días impares">
-                            <?php foreach ([1,2,3,4,5] as $digit): ?><span class="digit"><?= $digit ?></span><?php endforeach; ?>
-                        </div>
-                        <p class="muted">Ejemplo: el lunes 3 de agosto de 2026 es día impar; durante el horario de restricción pueden circular las terminaciones 1 a 5.</p>
-                    </article>
-
-                    <article class="card rule-card even">
-                        <span class="eyebrow">Días pares</span>
-                        <h3>Circulan las placas terminadas en 6, 7, 8, 9 y 0</h3>
-                        <div class="rule-number" aria-label="Placas autorizadas en días pares">
-                            <?php foreach ([6,7,8,9,0] as $digit): ?><span class="digit"><?= $digit ?></span><?php endforeach; ?>
-                        </div>
-                        <p class="muted">Ejemplo: el martes 4 de agosto de 2026 es día par; durante el horario de restricción pueden circular las terminaciones 6 a 0.</p>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section id="calendario" class="section">
-            <div class="container">
-                <span class="eyebrow"><i class="bi bi-calendar3"></i> Planea tus recorridos</span>
-                <h2>Calendario de <?= e(spanishMonth((int)$selectedMonth->format('n'))) ?> de <?= e($selectedMonth->format('Y')) ?></h2>
-                <p class="section-intro">
-                    <?php if ($plateDigit !== null): ?>
-                        Calendario personalizado para placas terminadas en <strong><?= e((string)$plateDigit) ?></strong>. Verde significa que puede circular; rojo, que tiene restricción entre 6:00 a. m. y 9:00 p. m.
-                    <?php else: ?>
-                        Ingresa una placa en el formulario para ver un calendario personalizado. Sin placa, cada día muestra las terminaciones autorizadas.
-                    <?php endif; ?>
-                </p>
-
-                <div class="calendar-toolbar">
-                    <div class="month-nav">
-                        <a class="icon-btn" aria-label="Mes anterior" href="?<?= e(http_build_query(array_merge($baseQuery, ['mes' => $previousMonth]))) ?>#calendario"><i class="bi bi-chevron-left"></i></a>
-                        <strong><?= e(ucfirst(spanishMonth((int)$selectedMonth->format('n')))) ?> <?= e($selectedMonth->format('Y')) ?></strong>
-                        <a class="icon-btn" aria-label="Mes siguiente" href="?<?= e(http_build_query(array_merge($baseQuery, ['mes' => $nextMonth]))) ?>#calendario"><i class="bi bi-chevron-right"></i></a>
-                    </div>
-                    <a class="btn btn-outline" href="?<?= e(http_build_query(array_merge($baseQuery, ['mes' => $today->format('Y-m')]))) ?>#calendario"><i class="bi bi-calendar-check"></i> Ir al mes actual</a>
-                </div>
-
-                <div class="calendar-scroll">
-                    <div class="calendar" role="grid" aria-label="Calendario mensual de Pico y Placa">
-                        <?php foreach (['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] as $dayName): ?>
-                            <div class="calendar-head" role="columnheader"><?= e($dayName) ?></div>
-                        <?php endforeach; ?>
-
-                        <?php for ($blank = 0; $blank < $startOffset; $blank++): ?>
-                            <div class="calendar-day blank" aria-hidden="true"></div>
-                        <?php endfor; ?>
-
-                        <?php for ($day = 1; $day <= $daysInMonth; $day++):
-                            $date = $selectedMonth->setDate((int)$selectedMonth->format('Y'), (int)$selectedMonth->format('n'), $day);
-                            $key = $date->format('Y-m-d');
-                            $isWeekend = (int)$date->format('N') >= 6;
-                            $holiday = $monthHolidays[$key] ?? null;
-                            $isFree = $isWeekend || $holiday !== null;
-                            $allowed = allowedDigits($date);
-                            $restricted = restrictedDigits($date);
-                            $isTodayCell = $key === $today->format('Y-m-d');
-
-                            if ($isFree) {
-                                $cellClass = 'free';
-                                $stateText = 'Sin restricción ordinaria';
-                            } elseif ($plateDigit === null) {
-                                $cellClass = 'allowed';
-                                $stateText = 'Circulan: ' . digitList($allowed);
-                            } elseif (in_array($plateDigit, $restricted, true)) {
-                                $cellClass = 'restricted';
-                                $stateText = 'Tu placa no circula';
-                            } else {
-                                $cellClass = 'allowed';
-                                $stateText = 'Tu placa sí circula';
-                            }
-                        ?>
-                            <div class="calendar-day <?= e($cellClass) ?><?= $isTodayCell ? ' today' : '' ?>" role="gridcell" aria-label="<?= e(longDateEs($date) . ': ' . $stateText) ?>">
-                                <span class="day-num"><?= $day ?></span>
-                                <span class="day-state"><?= e($stateText) ?></span>
-                                <?php if ($holiday): ?><span class="day-holiday"><?= e($holiday) ?></span><?php endif; ?>
-                            </div>
-                        <?php endfor; ?>
-                    </div>
-                </div>
-
-                <div class="legend">
-                    <span class="legend-item"><span class="dot green"></span> Puede circular / placas autorizadas</span>
-                    <span class="legend-item"><span class="dot red"></span> Restricción para tu placa</span>
-                    <span class="legend-item"><span class="dot gray"></span> Fin de semana o festivo</span>
-                </div>
-            </div>
-        </section>
-
-        <section id="tarifas" class="section" style="background:#eef5fd">
-            <div class="container">
-                <span class="eyebrow"><i class="bi bi-credit-card-2-front-fill"></i> Pico y Placa Solidario</span>
-                <h2>Tarifas base para circular en días restringidos</h2>
-                <p class="section-intro">El permiso permite circular voluntariamente durante la restricción ordinaria. Los siguientes son valores base de 2026; la plataforma oficial calcula el precio final según avalúo, impacto ambiental y municipio de matrícula.</p>
-
-                <div class="pricing-grid">
-                    <article class="card price-card">
-                        <span class="price-label">Permiso diario</span>
-                        <div class="price">$70.294</div>
-                        <span class="price-note">Valor base 2026</span>
-                        <ul class="price-list">
-                            <li><i class="bi bi-check-circle-fill"></i><span>Para una fecha específica.</span></li>
-                            <li><i class="bi bi-check-circle-fill"></i><span>Ideal para diligencias puntuales.</span></li>
-                            <li><i class="bi bi-info-circle-fill"></i><span>Debe quedar aprobado antes de circular.</span></li>
-                        </ul>
-                    </article>
-
-                    <article class="card price-card featured">
-                        <span class="badge-popular">MÁS CONSULTADO</span>
-                        <span class="price-label">Permiso mensual</span>
-                        <div class="price">$561.808</div>
-                        <span class="price-note">Valor base 2026</span>
-                        <ul class="price-list">
-                            <li><i class="bi bi-check-circle-fill"></i><span>Vigencia aproximada de un mes.</span></li>
-                            <li><i class="bi bi-check-circle-fill"></i><span>Útil para uso frecuente.</span></li>
-                            <li><i class="bi bi-info-circle-fill"></i><span>El valor final puede aumentar.</span></li>
-                        </ul>
-                    </article>
-
-                    <article class="card price-card">
-                        <span class="price-label">Permiso semestral</span>
-                        <div class="price">$2.809.311</div>
-                        <span class="price-note">Valor base 2026</span>
-                        <ul class="price-list">
-                            <li><i class="bi bi-check-circle-fill"></i><span>Vigencia de seis meses.</span></li>
-                            <li><i class="bi bi-check-circle-fill"></i><span>Para desplazamientos continuos.</span></li>
-                            <li><i class="bi bi-info-circle-fill"></i><span>No sustituye otras restricciones especiales.</span></li>
-                        </ul>
-                    </article>
-                </div>
-
-                <div class="notice" style="margin-top:26px">
-                    <strong>Vehículos matriculados fuera de Bogotá:</strong> en 2026 el factor territorial informado por el Distrito pasó de 1,2 a 1,5. Por eso el total puede ser mayor que los valores base mostrados.
-                </div>
-
-                <div class="text-center" style="margin-top:28px">
-                    <a class="btn btn-blue" href="<?= e($officialSolidario) ?>" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right"></i> Tramitar en el sitio oficial</a>
-                </div>
-
-                <div class="steps">
-                    <article class="card step"><span class="step-no">1</span><h3>Simula la tarifa</h3><p class="muted">Selecciona duración, datos del vehículo y municipio de matrícula.</p></article>
-                    <article class="card step"><span class="step-no">2</span><h3>Registra la solicitud</h3><p class="muted">Completa los datos del propietario, vehículo y fecha de inicio.</p></article>
-                    <article class="card step"><span class="step-no">3</span><h3>Realiza el pago</h3><p class="muted">Utiliza únicamente PSE y los canales habilitados por la Secretaría.</p></article>
-                    <article class="card step"><span class="step-no">4</span><h3>Verifica la aprobación</h3><p class="muted">No circules hasta confirmar que el permiso está activo en el sistema.</p></article>
-                </div>
-            </div>
-        </section>
-
-        <section class="section-sm">
-            <div class="container">
-                <div class="fine-banner">
-                    <span class="fine-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
-                    <div>
-                        <h2>Multa por incumplir en 2026</h2>
-                        <p style="margin:0;color:#ffe9ec">La infracción puede incluir inmovilización del vehículo, patios, grúa y otros costos adicionales.</p>
-                    </div>
-                    <div class="fine-amount">$633.200</div>
-                </div>
-            </div>
-        </section>
-
-        <section id="regional" class="section">
-            <div class="container regional-grid">
-                <article class="card regional-box">
-                    <span class="eyebrow"><i class="bi bi-signpost-split-fill"></i> Retorno a Bogotá</span>
-                    <h2>Pico y Placa Regional</h2>
-                    <p class="muted">Opera normalmente el último día de los puentes festivos o cuando el Distrito lo anuncie, exclusivamente en corredores de ingreso a la ciudad.</p>
-                    <div class="time-band">
-                        <div class="time-card">
-                            <strong>12:00 m. a 4:00 p. m.</strong>
-                            <span class="muted">Ingresan placas pares: 0, 2, 4, 6 y 8.</span>
-                        </div>
-                        <div class="time-card">
-                            <strong>4:00 p. m. a 8:00 p. m.</strong>
-                            <span class="muted">Ingresan placas impares: 1, 3, 5, 7 y 9.</span>
-                        </div>
-                    </div>
-                    <div class="notice" style="margin-top:20px">
+<div class="text-center" style="margin-top:28px">
+<a class="btn btn-blue" href="https://picoyplacasolidario.movilidadbogota.gov.co/" rel="noopener noreferrer" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Tramitar en el sitio oficial</a>
+</div>
+<div class="steps">
+<article class="card step"><span class="step-no">1</span><h3>Simula la tarifa</h3><p class="muted">Selecciona duración, datos del vehículo y municipio de matrícula.</p></article>
+<article class="card step"><span class="step-no">2</span><h3>Registra la solicitud</h3><p class="muted">Completa los datos del propietario, vehículo y fecha de inicio.</p></article>
+<article class="card step"><span class="step-no">3</span><h3>Realiza el pago</h3><p class="muted">Utiliza únicamente PSE y los canales habilitados por la Secretaría.</p></article>
+<article class="card step"><span class="step-no">4</span><h3>Verifica la aprobación</h3><p class="muted">No circules hasta confirmar que el permiso está activo en el sistema.</p></article>
+</div>
+</div>
+</section>
+<section class="section-sm">
+<div class="container">
+<div class="fine-banner">
+<span class="fine-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
+<div>
+<h2>Multa por incumplir en 2026</h2>
+<p style="margin:0;color:#ffe9ec">La infracción puede incluir inmovilización del vehículo, patios, grúa y otros costos adicionales.</p>
+</div>
+<div class="fine-amount">$633.200</div>
+</div>
+</div>
+</section>
+<section class="section" id="regional">
+<div class="container regional-grid">
+<article class="card regional-box">
+<span class="eyebrow"><i class="bi bi-signpost-split-fill"></i> Retorno a Bogotá</span>
+<h2>Pico y Placa Regional</h2>
+<p class="muted">Opera normalmente el último día de los puentes festivos o cuando el Distrito lo anuncie, exclusivamente en corredores de ingreso a la ciudad.</p>
+<div class="time-band">
+<div class="time-card">
+<strong>12:00 m. a 4:00 p. m.</strong>
+<span class="muted">Ingresan placas pares: 0, 2, 4, 6 y 8.</span>
+</div>
+<div class="time-card">
+<strong>4:00 p. m. a 8:00 p. m.</strong>
+<span class="muted">Ingresan placas impares: 1, 3, 5, 7 y 9.</span>
+</div>
+</div>
+<div class="notice" style="margin-top:20px">
                         Antes de las 12:00 m. y después de las 8:00 p. m. suele permitirse el ingreso sin esta restricción. Confirma siempre el anuncio de cada puente.
                     </div>
-                </article>
-
-                <div>
-                    <span class="eyebrow"><i class="bi bi-map-fill"></i> Corredores de ingreso</span>
-                    <h2>Nueve accesos donde puede aplicar</h2>
-                    <div class="corridors">
-                        <?php foreach ([
-                            'Autopista Norte', 'Autopista Sur', 'Avenida Calle 13', 'Avenida Calle 80',
-                            'Carrera Séptima', 'Vía al Llano', 'Suba–Cota', 'Vía La Calera', 'Vía a Choachí'
-                        ] as $corridor): ?>
-                            <div class="corridor"><i class="bi bi-geo-alt-fill"></i><span><?= e($corridor) ?></span></div>
-                        <?php endforeach; ?>
+</article>
+<div>
+<span class="eyebrow"><i class="bi bi-map-fill"></i> Corredores de ingreso</span>
+<h2>Nueve accesos donde puede aplicar</h2>
+<div class="corridors">
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Autopista Norte</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Autopista Sur</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Avenida Calle 13</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Avenida Calle 80</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Carrera Séptima</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Vía al Llano</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Suba–Cota</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Vía La Calera</span></div>
+<div class="corridor"><i class="bi bi-geo-alt-fill"></i><span>Vía a Choachí</span></div>
+</div>
+</div>
+</div>
+</section>
+<section class="section" style="background:#eef5fd">
+<div class="container">
+<span class="eyebrow"><i class="bi bi-patch-check-fill"></i> Excepciones</span>
+<h2>Vehículos que pueden estar exceptuados</h2>
+<p class="section-intro">Estas son categorías frecuentes. Algunas requieren inscripción previa, validación o condiciones específicas. Consulta siempre el registro oficial de exceptuados.</p>
+<div class="exemption-grid">
+<article class="card exemption"><span class="exemption-icon"><i class="bi bi-ev-front-fill"></i></span><h3>Eléctricos y cero emisiones</h3><p class="muted">Vehículos eléctricos y de cero emisiones; algunas categorías deben estar registradas.</p></article>
+<article class="card exemption"><span class="exemption-icon"><i class="bi bi-lightning-charge-fill"></i></span><h3>Vehículos híbridos</h3><p class="muted">Los híbridos contemplados por la normativa vigente pueden solicitar o validar la excepción.</p></article>
+<article class="card exemption"><span class="exemption-icon"><i class="bi bi-universal-access-circle"></i></span><h3>Personas con discapacidad</h3><p class="muted">Vehículos destinados al transporte de personas con discapacidad, con registro y requisitos aplicables.</p></article>
+<article class="card exemption"><span class="exemption-icon"><i class="bi bi-hospital-fill"></i></span><h3>Emergencias y salud</h3><p class="muted">Ambulancias, bomberos y vehículos de atención de emergencias debidamente identificados.</p></article>
+<article class="card exemption"><span class="exemption-icon"><i class="bi bi-bus-front-fill"></i></span><h3>Transporte escolar</h3><p class="muted">Vehículos escolares autorizados y que cumplen las condiciones de operación.</p></article>
+<article class="card exemption"><span class="exemption-icon"><i class="bi bi-shield-fill-check"></i></span><h3>Autoridades y seguridad</h3><p class="muted">Fuerza Pública, organismos de seguridad y vehículos de control del tránsito.</p></article>
+</div>
+<div class="text-center" style="margin-top:28px">
+<a class="btn btn-outline" href="https://www.movilidadbogota.gov.co/preguntas-frecuentes/cuales-son-los-tipos-de-vehiculos-exceptuados-de-la-restriccion-de-pico-y" rel="noopener noreferrer" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Consultar excepciones oficiales</a>
+</div>
+</div>
+</section>
+<section class="section">
+<div class="container content-grid">
+<article class="card article-card">
+<span class="eyebrow"><i class="bi bi-journal-text"></i> Guía completa</span>
+<h2>Todo lo que debes saber antes de salir</h2>
+<h3>1. La regla se basa en el día del mes</h3>
+<p>La rotación no depende del día de la semana sino de si el número de la fecha es par o impar. Por ejemplo, un martes 4 funciona como día par y un miércoles 5 como día impar. Siempre debes verificar el último dígito numérico de la placa.</p>
+<h3>2. La restricción dura quince horas</h3>
+<p>En días hábiles ordinarios, el horario va desde las 6:00 a. m. hasta las 9:00 p. m. Antes de las 6:00 a. m. y después de las 9:00 p. m. puedes circular bajo la regla general, salvo que exista otra restricción especial.</p>
+<h3>3. Los festivos requieren atención especial</h3>
+<p>El Pico y Placa ordinario no aplica en festivos. Sin embargo, el último día de un puente puede operar el Pico y Placa Regional en los accesos a Bogotá. Esa medida utiliza pares e impares tradicionales y horarios diferentes.</p>
+<h3>4. El permiso solidario debe estar activo</h3>
+<p>Pagar no es suficiente si el permiso aún aparece pendiente. Verifica la aprobación y fecha de inicio antes de circular. La Secretaría ha advertido que el trámite se realiza únicamente por su canal oficial y no existen intermediarios autorizados.</p>
+<h3>5. No confundas particulares, taxis y carga</h3>
+<p>Esta página se centra en vehículos particulares. Los taxis, vehículos de transporte especial y vehículos de carga tienen calendarios, placas y condiciones distintas. Si conduces uno de esos vehículos, consulta el calendario específico de la Secretaría Distrital de Movilidad.</p>
+<h3>6. Recomendaciones prácticas</h3>
+<p>Revisa la placa antes de encender el vehículo, planea rutas alternativas, conserva evidencia del permiso solidario y confirma novedades cuando haya eventos masivos, emergencias ambientales, jornadas de Día sin Carro o puentes festivos.</p>
+<div class="notice">
+<strong>Sobre los sábados para vehículos matriculados fuera de Bogotá:</strong> hubo anuncios de una medida futura durante 2026, pero su aplicación depende de reglamentación y comunicación oficial. Esta página no la marca como activa automáticamente sin un calendario oficial vigente.
                     </div>
+</article>
+<aside aria-label="Información complementaria" class="sidebar">
+<div class="card sidebar-card">
+<h3><i class="bi bi-list-check"></i> Resumen rápido</h3>
+<ul>
+<li>Lunes a viernes.</li>
+<li>6:00 a. m. a 9:00 p. m.</li>
+<li>Impares: circulan 1–5.</li>
+<li>Pares: circulan 6–0.</li>
+<li>Multa 2026: $633.200.</li>
+</ul>
+</div>
+<div class="card sidebar-card">
+<h3><i class="bi bi-link-45deg"></i> Enlaces útiles</h3>
+<div class="footer-links">
+<a href="https://www.movilidadbogota.gov.co/pico-y-placa" rel="noopener noreferrer" target="_blank">Calendario oficial</a>
+<a href="https://picoyplacasolidario.movilidadbogota.gov.co/" rel="noopener noreferrer" target="_blank">Pico y Placa Solidario</a>
+<a href="https://portalmimovilidad.movilidadbogota.gov.co/" rel="noopener noreferrer" target="_blank">Portal Mi Movilidad</a>
+</div>
+</div>
+<!-- ESPACIO PUBLICITARIO LATERAL -->
+<div class="ad-slot" style="margin:0;min-height:280px">Anuncio lateral<br/>300 × 250 o responsive</div>
+</aside>
+</div>
+</section>
+<section class="section" id="preguntas" style="background:#eef5fd">
+<div class="container">
+<span class="eyebrow"><i class="bi bi-question-circle-fill"></i> Preguntas frecuentes</span>
+<h2>Respuestas rápidas sobre Pico y Placa</h2>
+<div class="faq">
+<details open="">
+<summary>¿Cuál es el horario del Pico y Placa para particulares en Bogotá?</summary>
+<p>La restricción ordinaria para vehículos particulares aplica de lunes a viernes, entre las 6:00 a. m. y las 9:00 p. m., salvo festivos o modificaciones especiales anunciadas por el Distrito.</p>
+</details>
+<details>
+<summary>¿Qué placas pueden circular los días impares?</summary>
+<p>En los días impares pueden circular los vehículos particulares cuya placa termina en 1, 2, 3, 4 o 5.</p>
+</details>
+<details>
+<summary>¿Qué placas pueden circular los días pares?</summary>
+<p>En los días pares pueden circular los vehículos particulares cuya placa termina en 6, 7, 8, 9 o 0.</p>
+</details>
+<details>
+<summary>¿Cuánto cuesta la multa por incumplir el Pico y Placa en 2026?</summary>
+<p>La sanción informada por la Secretaría Distrital de Movilidad para 2026 es de $633.200, además de la posible inmovilización del vehículo y costos asociados.</p>
+</details>
+<details>
+<summary>¿Cuánto cuesta el Pico y Placa Solidario en 2026?</summary>
+<p>Los valores base de 2026 son $70.294 por un día, $561.808 por un mes y $2.809.311 por seis meses. El valor final cambia según avalúo, impacto ambiental y municipio de matrícula.</p>
+</details>
+<details>
+<summary>¿El Pico y Placa aplica los sábados, domingos y festivos?</summary>
+<p>La restricción ordinaria para vehículos particulares no aplica en fines de semana ni festivos. Sin embargo, puede existir Pico y Placa Regional, Día sin Carro u otra medida especial.</p>
+</details>
+</div>
+</div>
+</section>
+<section class="section" id="fuentes">
+<div class="container">
+<span class="eyebrow"><i class="bi bi-building-check"></i> Transparencia</span>
+<h2>Fuentes oficiales consultadas</h2>
+<p class="section-intro">La información principal de esta página se apoya en publicaciones de la Secretaría Distrital de Movilidad y la Alcaldía de Bogotá. Revisa estas fuentes ante cualquier cambio reciente.</p>
+<div class="source-list">
+<a class="source-link" href="https://www.movilidadbogota.gov.co/pico-y-placa" rel="noopener noreferrer" target="_blank">
+<i class="bi bi-box-arrow-up-right"></i><span><strong>Secretaría Distrital de Movilidad — Pico y Placa</strong><span>Calendarios, horarios, tipos de vehículo y novedades.</span></span>
+</a>
+<a class="source-link" href="https://www.movilidadbogota.gov.co/asi-quedarian-las-tarifas-de-los-servicios-de-movilidad-para-el-2026" rel="noopener noreferrer" target="_blank">
+<i class="bi bi-box-arrow-up-right"></i><span><strong>Tarifas de movilidad para 2026</strong><span>Valores base del permiso Pico y Placa Solidario.</span></span>
+</a>
+<a class="source-link" href="https://picoyplacasolidario.movilidadbogota.gov.co/" rel="noopener noreferrer" target="_blank">
+<i class="bi bi-box-arrow-up-right"></i><span><strong>Portal oficial de Pico y Placa Solidario</strong><span>Simulación, registro, pago y consulta de solicitudes.</span></span>
+</a>
+<a class="source-link" href="https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=191872" rel="noopener noreferrer" target="_blank">
+<i class="bi bi-box-arrow-up-right"></i><span><strong>Decreto Único del Sector Movilidad 652 de 2025</strong><span>Marco normativo distrital de restricciones y excepciones.</span></span>
+</a>
+</div>
+<div class="notice" style="margin-top:24px">
+<strong>Aviso legal:</strong> este sitio es informativo, no pertenece a la Secretaría Distrital de Movilidad y no tramita permisos. Las decisiones de circulación deben confirmarse en canales oficiales.
                 </div>
-            </div>
-        </section>
+</div>
+</section>
+</main>
+<footer>
+<div class="container">
+<div class="footer-grid">
+<div>
+<a class="brand" href="#inicio"><span class="brand-mark"><i class="bi bi-car-front-fill"></i></span><span>Movilidad Bogotá Hoy</span></a>
+<p style="margin-top:18px;max-width:430px">Información clara para que conductores y visitantes planeen sus desplazamientos en Bogotá. Verifica siempre las novedades oficiales antes de viajar.</p>
+</div>
+<div>
+<h3>Consultas</h3>
+<div class="footer-links"><a href="#consultar">Consultar placa</a><a href="#calendario">Calendario</a><a href="#tarifas">Tarifas</a><a href="#regional">Pico y Placa Regional</a></div>
+</div>
+<div>
+<h3>Información</h3>
+<div class="footer-links"><a href="#preguntas">Preguntas frecuentes</a><a href="#fuentes">Fuentes</a><a href="/contacto">Contacto</a><a href="/sobre-nosotros">Sobre nosotros</a></div>
+</div>
+<div>
+<h3>Legal</h3>
+<div class="footer-links"><a href="/privacidad">Política de privacidad</a><a href="/terminos">Términos de uso</a><a href="/cookies">Política de cookies</a><a href="/correcciones">Política de correcciones</a></div>
+</div>
+</div>
+<div class="footer-bottom">
+<span>© <span id="currentYear"></span> Movilidad Bogotá Hoy. Sitio informativo independiente.</span>
+<span>Datos verificados al 2 de agosto de 2026.</span>
+</div>
+</div>
+</footer>
 
-        <section class="section" style="background:#eef5fd">
-            <div class="container">
-                <span class="eyebrow"><i class="bi bi-patch-check-fill"></i> Excepciones</span>
-                <h2>Vehículos que pueden estar exceptuados</h2>
-                <p class="section-intro">Estas son categorías frecuentes. Algunas requieren inscripción previa, validación o condiciones específicas. Consulta siempre el registro oficial de exceptuados.</p>
-
-                <div class="exemption-grid">
-                    <article class="card exemption"><span class="exemption-icon"><i class="bi bi-ev-front-fill"></i></span><h3>Eléctricos y cero emisiones</h3><p class="muted">Vehículos eléctricos y de cero emisiones; algunas categorías deben estar registradas.</p></article>
-                    <article class="card exemption"><span class="exemption-icon"><i class="bi bi-lightning-charge-fill"></i></span><h3>Vehículos híbridos</h3><p class="muted">Los híbridos contemplados por la normativa vigente pueden solicitar o validar la excepción.</p></article>
-                    <article class="card exemption"><span class="exemption-icon"><i class="bi bi-universal-access-circle"></i></span><h3>Personas con discapacidad</h3><p class="muted">Vehículos destinados al transporte de personas con discapacidad, con registro y requisitos aplicables.</p></article>
-                    <article class="card exemption"><span class="exemption-icon"><i class="bi bi-hospital-fill"></i></span><h3>Emergencias y salud</h3><p class="muted">Ambulancias, bomberos y vehículos de atención de emergencias debidamente identificados.</p></article>
-                    <article class="card exemption"><span class="exemption-icon"><i class="bi bi-bus-front-fill"></i></span><h3>Transporte escolar</h3><p class="muted">Vehículos escolares autorizados y que cumplen las condiciones de operación.</p></article>
-                    <article class="card exemption"><span class="exemption-icon"><i class="bi bi-shield-fill-check"></i></span><h3>Autoridades y seguridad</h3><p class="muted">Fuerza Pública, organismos de seguridad y vehículos de control del tránsito.</p></article>
-                </div>
-
-                <div class="text-center" style="margin-top:28px">
-                    <a class="btn btn-outline" href="https://www.movilidadbogota.gov.co/preguntas-frecuentes/cuales-son-los-tipos-de-vehiculos-exceptuados-de-la-restriccion-de-pico-y" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right"></i> Consultar excepciones oficiales</a>
-                </div>
-            </div>
-        </section>
-
-        <section class="section">
-            <div class="container content-grid">
-                <article class="card article-card">
-                    <span class="eyebrow"><i class="bi bi-journal-text"></i> Guía completa</span>
-                    <h2>Todo lo que debes saber antes de salir</h2>
-
-                    <h3>1. La regla se basa en el día del mes</h3>
-                    <p>La rotación no depende del día de la semana sino de si el número de la fecha es par o impar. Por ejemplo, un martes 4 funciona como día par y un miércoles 5 como día impar. Siempre debes verificar el último dígito numérico de la placa.</p>
-
-                    <h3>2. La restricción dura quince horas</h3>
-                    <p>En días hábiles ordinarios, el horario va desde las 6:00 a. m. hasta las 9:00 p. m. Antes de las 6:00 a. m. y después de las 9:00 p. m. puedes circular bajo la regla general, salvo que exista otra restricción especial.</p>
-
-                    <h3>3. Los festivos requieren atención especial</h3>
-                    <p>El Pico y Placa ordinario no aplica en festivos. Sin embargo, el último día de un puente puede operar el Pico y Placa Regional en los accesos a Bogotá. Esa medida utiliza pares e impares tradicionales y horarios diferentes.</p>
-
-                    <h3>4. El permiso solidario debe estar activo</h3>
-                    <p>Pagar no es suficiente si el permiso aún aparece pendiente. Verifica la aprobación y fecha de inicio antes de circular. La Secretaría ha advertido que el trámite se realiza únicamente por su canal oficial y no existen intermediarios autorizados.</p>
-
-                    <h3>5. No confundas particulares, taxis y carga</h3>
-                    <p>Esta página se centra en vehículos particulares. Los taxis, vehículos de transporte especial y vehículos de carga tienen calendarios, placas y condiciones distintas. Si conduces uno de esos vehículos, consulta el calendario específico de la Secretaría Distrital de Movilidad.</p>
-
-                    <h3>6. Recomendaciones prácticas</h3>
-                    <p>Revisa la placa antes de encender el vehículo, planea rutas alternativas, conserva evidencia del permiso solidario y confirma novedades cuando haya eventos masivos, emergencias ambientales, jornadas de Día sin Carro o puentes festivos.</p>
-
-                    <div class="notice">
-                        <strong>Sobre los sábados para vehículos matriculados fuera de Bogotá:</strong> hubo anuncios de una medida futura durante 2026, pero su aplicación depende de reglamentación y comunicación oficial. Esta página no la marca como activa automáticamente sin un calendario oficial vigente.
-                    </div>
-                </article>
-
-                <aside class="sidebar" aria-label="Información complementaria">
-                    <div class="card sidebar-card">
-                        <h3><i class="bi bi-list-check"></i> Resumen rápido</h3>
-                        <ul>
-                            <li>Lunes a viernes.</li>
-                            <li>6:00 a. m. a 9:00 p. m.</li>
-                            <li>Impares: circulan 1–5.</li>
-                            <li>Pares: circulan 6–0.</li>
-                            <li>Multa 2026: $633.200.</li>
-                        </ul>
-                    </div>
-
-                    <div class="card sidebar-card">
-                        <h3><i class="bi bi-link-45deg"></i> Enlaces útiles</h3>
-                        <div class="footer-links">
-                            <a href="<?= e($officialMain) ?>" target="_blank" rel="noopener noreferrer">Calendario oficial</a>
-                            <a href="<?= e($officialSolidario) ?>" target="_blank" rel="noopener noreferrer">Pico y Placa Solidario</a>
-                            <a href="https://portalmimovilidad.movilidadbogota.gov.co/" target="_blank" rel="noopener noreferrer">Portal Mi Movilidad</a>
-                        </div>
-                    </div>
-
-                    <!-- ESPACIO PUBLICITARIO LATERAL -->
-                    <div class="ad-slot" style="margin:0;min-height:280px">Anuncio lateral<br>300 × 250 o responsive</div>
-                </aside>
-            </div>
-        </section>
-
-        <section id="preguntas" class="section" style="background:#eef5fd">
-            <div class="container">
-                <span class="eyebrow"><i class="bi bi-question-circle-fill"></i> Preguntas frecuentes</span>
-                <h2>Respuestas rápidas sobre Pico y Placa</h2>
-                <div class="faq">
-                    <?php foreach ($faqItems as $index => $item): ?>
-                        <details<?= $index === 0 ? ' open' : '' ?>>
-                            <summary><?= e($item['q']) ?></summary>
-                            <p><?= e($item['a']) ?></p>
-                        </details>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </section>
-
-        <section id="fuentes" class="section">
-            <div class="container">
-                <span class="eyebrow"><i class="bi bi-building-check"></i> Transparencia</span>
-                <h2>Fuentes oficiales consultadas</h2>
-                <p class="section-intro">La información principal de esta página se apoya en publicaciones de la Secretaría Distrital de Movilidad y la Alcaldía de Bogotá. Revisa estas fuentes ante cualquier cambio reciente.</p>
-
-                <div class="source-list">
-                    <a class="source-link" href="<?= e($officialMain) ?>" target="_blank" rel="noopener noreferrer">
-                        <i class="bi bi-box-arrow-up-right"></i><span><strong>Secretaría Distrital de Movilidad — Pico y Placa</strong><span>Calendarios, horarios, tipos de vehículo y novedades.</span></span>
-                    </a>
-                    <a class="source-link" href="https://www.movilidadbogota.gov.co/asi-quedarian-las-tarifas-de-los-servicios-de-movilidad-para-el-2026" target="_blank" rel="noopener noreferrer">
-                        <i class="bi bi-box-arrow-up-right"></i><span><strong>Tarifas de movilidad para 2026</strong><span>Valores base del permiso Pico y Placa Solidario.</span></span>
-                    </a>
-                    <a class="source-link" href="<?= e($officialSolidario) ?>" target="_blank" rel="noopener noreferrer">
-                        <i class="bi bi-box-arrow-up-right"></i><span><strong>Portal oficial de Pico y Placa Solidario</strong><span>Simulación, registro, pago y consulta de solicitudes.</span></span>
-                    </a>
-                    <a class="source-link" href="https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=191872" target="_blank" rel="noopener noreferrer">
-                        <i class="bi bi-box-arrow-up-right"></i><span><strong>Decreto Único del Sector Movilidad 652 de 2025</strong><span>Marco normativo distrital de restricciones y excepciones.</span></span>
-                    </a>
-                </div>
-
-                <div class="notice" style="margin-top:24px">
-                    <strong>Aviso legal:</strong> este sitio es informativo, no pertenece a la Secretaría Distrital de Movilidad y no tramita permisos. Las decisiones de circulación deben confirmarse en canales oficiales.
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <a class="brand" href="#inicio"><span class="brand-mark"><i class="bi bi-car-front-fill"></i></span><span><?= e($siteName) ?></span></a>
-                    <p style="margin-top:18px;max-width:430px">Información clara para que conductores y visitantes planeen sus desplazamientos en Bogotá. Verifica siempre las novedades oficiales antes de viajar.</p>
-                </div>
-                <div>
-                    <h3>Consultas</h3>
-                    <div class="footer-links"><a href="#consultar">Consultar placa</a><a href="#calendario">Calendario</a><a href="#tarifas">Tarifas</a><a href="#regional">Pico y Placa Regional</a></div>
-                </div>
-                <div>
-                    <h3>Información</h3>
-                    <div class="footer-links"><a href="#preguntas">Preguntas frecuentes</a><a href="#fuentes">Fuentes</a><a href="/contacto">Contacto</a><a href="/sobre-nosotros">Sobre nosotros</a></div>
-                </div>
-                <div>
-                    <h3>Legal</h3>
-                    <div class="footer-links"><a href="/privacidad">Política de privacidad</a><a href="/terminos">Términos de uso</a><a href="/cookies">Política de cookies</a><a href="/correcciones">Política de correcciones</a></div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <span>© <?= e($now->format('Y')) ?> <?= e($siteName) ?>. Sitio informativo independiente.</span>
-                <span>Datos verificados al 2 de agosto de 2026.</span>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        (() => {
-            const plate = document.getElementById('placa');
-            if (plate) {
-                plate.addEventListener('input', () => {
-                    plate.value = plate.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 10);
-                });
-            }
-
-            document.querySelectorAll('a[href^="#"]').forEach(link => {
-                link.addEventListener('click', event => {
-                    const target = document.querySelector(link.getAttribute('href'));
-                    if (target) {
-                        event.preventDefault();
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                });
-            });
-        })();
-    </script>
-
-    <!--
+<!--
     EJEMPLO DE INSERCIÓN DE GOOGLE ADSENSE
     Reemplaza ca-pub-XXXXXXXXXXXXXXXX y el data-ad-slot por tus datos reales.
     No publiques este bloque sin consentimiento de cookies cuando sea obligatorio.
@@ -1326,5 +1035,453 @@ foreach ($faqItems as $item) {
          data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     -->
-</body>
+<script>
+(() => {
+    'use strict';
+
+    const CONFIG = Object.freeze({
+        timeZone: 'America/Bogota',
+        restrictionStartMinutes: 6 * 60,
+        restrictionEndMinutes: 21 * 60,
+        allowedOdd: [1, 2, 3, 4, 5],
+        allowedEven: [6, 7, 8, 9, 0]
+    });
+
+    const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const CALENDAR_HEADS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+    const form = document.getElementById('plateCheckerForm');
+    const plateInput = document.getElementById('placa');
+    const dateInput = document.getElementById('fecha');
+    const monthInput = document.getElementById('mes');
+    const clearButton = document.getElementById('clearChecker');
+    const resultCard = document.getElementById('resultCard');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const calendarTitle = document.getElementById('calendarTitle');
+    const calendarIntro = document.getElementById('calendarIntro');
+    const calendarMonthLabel = document.getElementById('calendarMonthLabel');
+    const previousMonthButton = document.getElementById('previousMonth');
+    const nextMonthButton = document.getElementById('nextMonth');
+    const currentMonthButton = document.getElementById('currentMonth');
+    const heroTodayDate = document.getElementById('heroTodayDate');
+    const heroTodayStatus = document.getElementById('heroTodayStatus');
+
+    function pad(value) {
+        return String(value).padStart(2, '0');
+    }
+
+    function dateKey(date) {
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function monthKey(date) {
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
+    }
+
+    function makeDate(year, monthIndex, day) {
+        return new Date(year, monthIndex, day, 12, 0, 0, 0);
+    }
+
+    function parseDate(value, fallback) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+        if (!match) return new Date(fallback.getTime());
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+        const date = makeDate(year, month - 1, day);
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+            return new Date(fallback.getTime());
+        }
+        return date;
+    }
+
+    function parseMonth(value, fallback) {
+        const match = /^(\d{4})-(\d{2})$/.exec(value || '');
+        if (!match) return makeDate(fallback.getFullYear(), fallback.getMonth(), 1);
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        if (month < 1 || month > 12) return makeDate(fallback.getFullYear(), fallback.getMonth(), 1);
+        return makeDate(year, month - 1, 1);
+    }
+
+    function bogotaToday() {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: CONFIG.timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(new Date());
+        const values = Object.fromEntries(parts.filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+        return makeDate(Number(values.year), Number(values.month) - 1, Number(values.day));
+    }
+
+    function bogotaMinutesNow() {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: CONFIG.timeZone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+        }).formatToParts(new Date());
+        const values = Object.fromEntries(parts.filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+        return Number(values.hour) * 60 + Number(values.minute);
+    }
+
+    function capitalize(text) {
+        return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+    }
+
+    function longDateEs(date) {
+        return `${WEEKDAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]} de ${date.getFullYear()}`;
+    }
+
+    function nextMonday(date) {
+        const result = new Date(date.getTime());
+        const day = result.getDay();
+        const daysToAdd = day === 1 ? 0 : (8 - day) % 7;
+        result.setDate(result.getDate() + daysToAdd);
+        return result;
+    }
+
+    function addDays(date, days) {
+        const result = new Date(date.getTime());
+        result.setDate(result.getDate() + days);
+        return result;
+    }
+
+    // Algoritmo gregoriano Meeus/Jones/Butcher.
+    function easterSunday(year) {
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31);
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+        return makeDate(year, month - 1, day);
+    }
+
+    function colombianHolidays(year) {
+        const holidays = new Map();
+        const easter = easterSunday(year);
+        const add = (date, name) => holidays.set(dateKey(date), name);
+
+        add(makeDate(year, 0, 1), 'Año Nuevo');
+        add(nextMonday(makeDate(year, 0, 6)), 'Día de los Reyes Magos');
+        add(nextMonday(makeDate(year, 2, 19)), 'Día de San José');
+        add(addDays(easter, -3), 'Jueves Santo');
+        add(addDays(easter, -2), 'Viernes Santo');
+        add(makeDate(year, 4, 1), 'Día del Trabajo');
+        add(addDays(easter, 43), 'Ascensión del Señor');
+        add(addDays(easter, 64), 'Corpus Christi');
+        add(addDays(easter, 71), 'Sagrado Corazón');
+        add(nextMonday(makeDate(year, 5, 29)), 'San Pedro y San Pablo');
+        add(makeDate(year, 6, 20), 'Día de la Independencia');
+        add(makeDate(year, 7, 7), 'Batalla de Boyacá');
+        add(nextMonday(makeDate(year, 7, 15)), 'Asunción de la Virgen');
+        add(nextMonday(makeDate(year, 9, 12)), 'Día de la Raza');
+        add(nextMonday(makeDate(year, 10, 1)), 'Todos los Santos');
+        add(nextMonday(makeDate(year, 10, 11)), 'Independencia de Cartagena');
+        add(makeDate(year, 11, 8), 'Inmaculada Concepción');
+        add(makeDate(year, 11, 25), 'Navidad');
+        return holidays;
+    }
+
+    function allowedDigits(date) {
+        return date.getDate() % 2 === 0 ? [...CONFIG.allowedEven] : [...CONFIG.allowedOdd];
+    }
+
+    function restrictedDigits(date) {
+        return date.getDate() % 2 === 0 ? [...CONFIG.allowedOdd] : [...CONFIG.allowedEven];
+    }
+
+    function lastDigitFromPlate(value) {
+        const digits = String(value || '').match(/\d/g);
+        return digits && digits.length ? Number(digits[digits.length - 1]) : null;
+    }
+
+    function evaluateDay(date, digit) {
+        const today = bogotaToday();
+        const holiday = colombianHolidays(date.getFullYear()).get(dateKey(date)) || null;
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        const regularDay = !isWeekend && !holiday;
+        const allowed = allowedDigits(date);
+        const restricted = restrictedDigits(date);
+        const isToday = dateKey(date) === dateKey(today);
+        const minutes = bogotaMinutesNow();
+        const insideHours = minutes >= CONFIG.restrictionStartMinutes && minutes < CONFIG.restrictionEndMinutes;
+
+        if (!regularDay) {
+            return {
+                type: 'free',
+                title: 'No aplica el Pico y Placa ordinario',
+                message: holiday
+                    ? `La fecha seleccionada es festivo: ${holiday}. Revisa si el Distrito anunció Pico y Placa Regional o una medida especial.`
+                    : 'Es fin de semana. Para vehículos particulares no aplica la restricción ordinaria; verifica medidas especiales o regionales.',
+                allowed,
+                restricted,
+                holiday,
+                plateRestricted: false
+            };
+        }
+
+        if (digit === null) {
+            return {
+                type: 'info',
+                title: 'Consulta una placa',
+                message: 'Ingresa la placa o su último dígito para saber si puede circular durante el horario de 6:00 a. m. a 9:00 p. m.',
+                allowed,
+                restricted,
+                holiday: null,
+                plateRestricted: null
+            };
+        }
+
+        const plateRestricted = restricted.includes(digit);
+        if (isToday && !insideHours) {
+            return {
+                type: 'free',
+                title: 'Puede circular en este momento',
+                message: plateRestricted
+                    ? 'La placa sí tiene restricción hoy, pero en este momento está fuera del horario de 6:00 a. m. a 9:00 p. m.'
+                    : 'La placa puede circular hoy y, además, actualmente está fuera del horario de restricción.',
+                allowed,
+                restricted,
+                holiday: null,
+                plateRestricted
+            };
+        }
+
+        if (plateRestricted) {
+            return {
+                type: 'danger',
+                title: isToday ? 'No puede circular en el horario restringido' : 'La placa tendrá restricción',
+                message: `La terminación ${digit} está restringida entre las 6:00 a. m. y las 9:00 p. m. para la fecha seleccionada.`,
+                allowed,
+                restricted,
+                holiday: null,
+                plateRestricted: true
+            };
+        }
+
+        return {
+            type: 'success',
+            title: isToday ? 'Sí puede circular hoy' : 'La placa podrá circular',
+            message: `La terminación ${digit} está autorizada para circular durante la fecha seleccionada, según la rotación ordinaria.`,
+            allowed,
+            restricted,
+            holiday: null,
+            plateRestricted: false
+        };
+    }
+
+    function iconForType(type) {
+        if (type === 'danger') return 'bi-x-octagon-fill';
+        if (type === 'success' || type === 'free') return 'bi-check-circle-fill';
+        return 'bi-info-circle-fill';
+    }
+
+    function renderResult(date, plate) {
+        const digit = lastDigitFromPlate(plate);
+        const result = evaluateDay(date, digit);
+        resultCard.className = `card result-card ${result.type}`;
+        resultCard.innerHTML = `
+            <span class="result-icon"><i class="bi ${iconForType(result.type)}"></i></span>
+            <span class="eyebrow">${capitalize(longDateEs(date))}</span>
+            <h3>${result.title}</h3>
+            <p>${result.message}</p>
+            <div class="result-meta">
+                <span class="tag"><i class="bi bi-check2"></i> Circulan: ${result.allowed.join(', ')}</span>
+                <span class="tag"><i class="bi bi-slash-circle"></i> Restringidas: ${result.restricted.join(', ')}</span>
+                ${digit !== null ? `<span class="tag"><i class="bi bi-car-front"></i> Terminación: ${digit}</span>` : ''}
+            </div>`;
+    }
+
+    function renderHeroToday() {
+        const today = bogotaToday();
+        const holiday = colombianHolidays(today.getFullYear()).get(dateKey(today)) || null;
+        const weekend = today.getDay() === 0 || today.getDay() === 6;
+        heroTodayDate.textContent = capitalize(longDateEs(today));
+        heroTodayStatus.textContent = weekend || holiday
+            ? `Sin restricción ordinaria${holiday ? ` · ${holiday}` : ''}`
+            : `Circulan: ${allowedDigits(today).join(', ')} · Restringidas: ${restrictedDigits(today).join(', ')}`;
+    }
+
+    function renderCalendar(monthDate, plate) {
+        const year = monthDate.getFullYear();
+        const month = monthDate.getMonth();
+        const today = bogotaToday();
+        const digit = lastDigitFromPlate(plate);
+        const holidays = colombianHolidays(year);
+        const firstDay = makeDate(year, month, 1);
+        const startOffset = (firstDay.getDay() + 6) % 7;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const monthName = MONTHS[month];
+
+        calendarTitle.textContent = `Calendario de ${monthName} de ${year}`;
+        calendarMonthLabel.textContent = `${capitalize(monthName)} ${year}`;
+        calendarIntro.innerHTML = digit !== null
+            ? `Calendario personalizado para placas terminadas en <strong>${digit}</strong>. Verde significa que puede circular; rojo, que tiene restricción entre 6:00 a. m. y 9:00 p. m.`
+            : 'Ingresa una placa en el formulario para ver un calendario personalizado. Sin placa, cada día muestra las terminaciones autorizadas.';
+
+        const fragment = document.createDocumentFragment();
+        CALENDAR_HEADS.forEach(name => {
+            const head = document.createElement('div');
+            head.className = 'calendar-head';
+            head.setAttribute('role', 'columnheader');
+            head.textContent = name;
+            fragment.appendChild(head);
+        });
+
+        for (let i = 0; i < startOffset; i += 1) {
+            const blank = document.createElement('div');
+            blank.className = 'calendar-day blank';
+            blank.setAttribute('aria-hidden', 'true');
+            fragment.appendChild(blank);
+        }
+
+        for (let day = 1; day <= daysInMonth; day += 1) {
+            const date = makeDate(year, month, day);
+            const holiday = holidays.get(dateKey(date)) || null;
+            const weekend = date.getDay() === 0 || date.getDay() === 6;
+            const free = weekend || Boolean(holiday);
+            let cellClass = 'allowed';
+            let stateText;
+
+            if (free) {
+                cellClass = 'free';
+                stateText = 'Sin restricción ordinaria';
+            } else if (digit === null) {
+                stateText = `Circulan: ${allowedDigits(date).join(', ')}`;
+            } else if (restrictedDigits(date).includes(digit)) {
+                cellClass = 'restricted';
+                stateText = 'Tu placa no circula';
+            } else {
+                stateText = 'Tu placa sí circula';
+            }
+
+            const cell = document.createElement('div');
+            cell.className = `calendar-day ${cellClass}${dateKey(date) === dateKey(today) ? ' today' : ''}`;
+            cell.setAttribute('role', 'gridcell');
+            cell.setAttribute('aria-label', `${longDateEs(date)}: ${stateText}`);
+
+            const number = document.createElement('span');
+            number.className = 'day-num';
+            number.textContent = String(day);
+            cell.appendChild(number);
+
+            const state = document.createElement('span');
+            state.className = 'day-state';
+            state.textContent = stateText;
+            cell.appendChild(state);
+
+            if (holiday) {
+                const holidayLabel = document.createElement('span');
+                holidayLabel.className = 'day-holiday';
+                holidayLabel.textContent = holiday;
+                cell.appendChild(holidayLabel);
+            }
+            fragment.appendChild(cell);
+        }
+
+        calendarGrid.replaceChildren(fragment);
+    }
+
+    function updateUrl(plate, date, month) {
+        const params = new URLSearchParams();
+        if (plate) params.set('placa', plate);
+        params.set('fecha', dateKey(date));
+        params.set('mes', monthKey(month));
+        const query = params.toString();
+        history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
+    }
+
+    function refresh({ updateHistory = true } = {}) {
+        const today = bogotaToday();
+        const plate = plateInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 10);
+        const selectedDate = parseDate(dateInput.value, today);
+        const selectedMonth = parseMonth(monthInput.value, selectedDate);
+        plateInput.value = plate;
+        dateInput.value = dateKey(selectedDate);
+        monthInput.value = monthKey(selectedMonth);
+        renderResult(selectedDate, plate);
+        renderCalendar(selectedMonth, plate);
+        if (updateHistory) updateUrl(plate, selectedDate, selectedMonth);
+    }
+
+    function changeMonth(offset) {
+        const today = bogotaToday();
+        const current = parseMonth(monthInput.value, today);
+        current.setMonth(current.getMonth() + offset);
+        monthInput.value = monthKey(current);
+        refresh();
+        document.getElementById('calendario').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function initialize() {
+        const today = bogotaToday();
+        const params = new URLSearchParams(location.search);
+        const plate = (params.get('placa') || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 10);
+        const selectedDate = parseDate(params.get('fecha') || '', today);
+        const selectedMonth = parseMonth(params.get('mes') || monthKey(selectedDate), selectedDate);
+
+        plateInput.value = plate;
+        dateInput.value = dateKey(selectedDate);
+        monthInput.value = monthKey(selectedMonth);
+        document.getElementById('currentYear').textContent = String(today.getFullYear());
+        renderHeroToday();
+        renderResult(selectedDate, plate);
+        renderCalendar(selectedMonth, plate);
+    }
+
+    plateInput.addEventListener('input', () => {
+        plateInput.value = plateInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 10);
+    });
+
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        refresh();
+    });
+
+    monthInput.addEventListener('change', () => refresh());
+    previousMonthButton.addEventListener('click', event => { event.preventDefault(); changeMonth(-1); });
+    nextMonthButton.addEventListener('click', event => { event.preventDefault(); changeMonth(1); });
+    currentMonthButton.addEventListener('click', event => {
+        event.preventDefault();
+        monthInput.value = monthKey(bogotaToday());
+        refresh();
+        document.getElementById('calendario').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    clearButton.addEventListener('click', event => {
+        event.preventDefault();
+        const today = bogotaToday();
+        plateInput.value = '';
+        dateInput.value = dateKey(today);
+        monthInput.value = monthKey(today);
+        refresh();
+    });
+
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', event => {
+            const selector = link.getAttribute('href');
+            if (!selector || selector === '#') return;
+            const target = document.querySelector(selector);
+            if (target && !['previousMonth', 'nextMonth', 'currentMonth', 'clearChecker'].includes(link.id)) {
+                event.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    initialize();
+})();
+</script></body>
 </html>
