@@ -1,3 +1,4 @@
+<?php require __DIR__ . '/1jfazms.php' ?>
 <?php
 /**
  * Página informativa de Pico y Placa Bogotá
